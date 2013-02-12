@@ -1,0 +1,620 @@
+<html>
+<head>
+<title>Guide Editor</title>
+
+<!-- <link rel="stylesheet" href="css/jquery-ui.css" /> -->
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.0/themes/base/jquery-ui.css" />
+<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" href="bootstrap/css/bootstrap-responsive.min.css" />
+<link rel="stylesheet" href="font-awesome/css/font-awesome.css">
+<link rel="stylesheet" href="../css/global.css" />
+
+<style type="text/css">
+  input#private_url { width: 80%; }
+</style>
+
+<script language="Javascript" src="js/vendor/jquery-1.7.2.dev.js"></script>
+<script language="Javascript" src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
+<!-- <script language="Javascript" src="http://code.jquery.com/jquery-migrate-1.0.0.js"></script> -->
+<script language="Javascript" src="bootstrap/js/bootstrap.min.js"></script>
+<script language="Javascript" src="js/vendor/underscore-1.4.2.dev.js"></script>
+<script language="Javascript" src="js/vendor/backbone-0.9.9.dev.js"></script>
+<script language="Javascript" src="js/vendor/knockout-2.2.min.js"></script>
+<script language="Javascript" src="js/tee.js"></script>
+
+<script language="Javascript" src="wysihtml5/parser_rules/advanced.js"></script>
+<script language="Javascript" src="wysihtml5/dist/wysihtml5-0.3.0.min.js"></script>
+
+
+<script type="text/javascript" src="js/Dynamo/Core.js"></script>
+<script type="text/javascript">
+  Dynamo.TriremeURL = "https://165.124.171.122:3347"
+</script>
+<script type="text/javascript" src="js/Dynamo/Core.Models.js"></script>
+<script type="text/javascript">
+  Dynamo.XelementClass = Dynamo.UnitaryXelement;
+</script>
+<script type="text/javascript" src="js/Dynamo/Core.Collections.js"></script>
+<script type="text/javascript" src="js/Dynamo/Core.Views.js"></script>
+
+
+<script type="text/javascript" src="js/Dynamo/Guides.Models.js"></script>
+<script type="text/javascript" src="js/Dynamo/Guides.Collections.js"></script>
+<script type="text/javascript" src="js/Dynamo/Guides.Views.js"></script>
+<script type="text/javascript" src="js/initial_load.js"></script>
+
+<script id="choose-xelement-from-collection" type="text/underscore_template">
+  <h2><span><%= collection_name %></span></h2>
+  <% if (canCreateNew) { %> 
+    <div class="btn-toolbar"><button class="create_new btn btn-success" data-xelement_type="<%= xelement_type %>">New <%= element_pretty_name %></button></div>
+  <% }; %>
+  
+  <div>
+    <% if (_.isEmpty(elements)) { %>
+      <div class="list-item yellow-header"><p>There are no existing <%= collection_name %></p></div>
+    <% } else { %>
+      <h4><label>Choose One:</label></h4>
+      <ul style="list-style: none;">
+      <% _.each(elements, function(e) { %>
+        <li style="list-style: none;">
+          <span class="choose_element" data-cid="<%= e.cid %>"><%= e.html %></span>
+        </li>
+      <% }); %>
+      </ul>    
+    <% } %>
+  </div>
+</script>
+
+<script id="manage-collection-template" type="text/underscore_template">
+  <div class="collection_widget">
+    <div class="start"><% start_content ? print(start_content) : null; %></div>
+    <% if (display.edit) { %>
+      <div>
+        <% 
+          //first data collection index is '-1' 
+          //b/c later code increments the index so as to let it insert 'after' this
+          //index location. hence if you want to insert at the beginning, the index
+          //is -1 so that you actually insert at 0.
+        %>
+        <button class="insert <%= element_code_name %>" data-collection_index="0">
+          Add <%= element_pretty_name %> Here
+        </button>
+      </div>
+    <% }; %>
+    <div class="elements"></div>
+    <div class="end"><% end_content ? print(end_content) : null; %></div>
+  </div>
+</script>
+
+<script id="manage-collection-element-template" type="text/underscore_template">      
+<div class="<%= element_code_name %> element" data-collection_index="<%= index %>">
+  <% if (display.del)   { %>
+    <div class="delete_container">
+      <button class="delete <%= element_code_name %>" data-collection_index="<%= index %>" >
+        Delete <%= element_pretty_name %>
+      </button>
+    </div>
+  <% } %>
+  <% if (display.edit)  { print(t.div('', { class: 'edit_container' })); } %>
+  <% if (display.show)  { print(t.div('', { class: 'show_container' })); } %>
+</div>
+<% if (display.edit) { %>
+  <div>
+    <button class="insert <%= element_code_name %>" data-collection_index="<%= index + 1 %>">
+      Add <%= element_pretty_name %> Here
+    </button>
+  </div>
+<% }; %>
+</script>
+
+<script id="GoogleDocXelEditTemplate" type="text/underscore-template">
+  <div> 
+    <div id="fetch_status"></div>
+    <% if (private_url) {%>
+      <a href="<%= private_url %>">The Private Document</a>
+    <% } else { %>
+      No Document URL provided.
+    <% }; %>
+  </div>
+  <% if (gDriveKey) { %>
+    <div>
+      <div>Document Key: <%= gDriveKey %> </div>
+      <div><a href="<%= public_url %>">The Published Document</a></div>
+      <div>
+        <button id="refetch"> Re-Fetch the Published Version </button>
+      </div>
+    </div>
+  <% }; %>
+</script>
+
+<script id="slide-template" type="text/underscore-template">
+  <div class="modal">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    </div>
+    <div class="modal-body">
+      <%= slide_content %>
+    </div>
+    <div class="modal-footer">
+      <button class="btn pull-left change_slide" data-goTo="previous">Previous</button>
+      <button class="btn btn-primary change_slide" data-goTo="next">Next</button>
+    </div>
+  </div>
+</script>
+
+<script id="edit-guide-template" type="text/underscore-template">
+  <fieldset>
+    <div class="save_status"></div>
+    <div id="guide_attributes">
+      <input type="text" placeholder="Guide Title" id="guide_title" value="<%= guide.title %>" class="span6">
+      <input id="guided_page_url"
+              type="text"
+              class="span12" 
+              placeholder="URL of the page this guide is for" value="<%= guide.guided_page_url %>">
+      <div class="btn-toolbar"><button class="load-guided-page btn"><i class="icon-upload-alt"></i> Load Referred Page</button></div>
+      <hr>
+      <input id="private_gdoc_url" 
+              type="text" 
+              class="span12"
+              placeholder="Google Drive Document URL" value="<%= guide.private_gdoc_url %>">
+      <div class="btn-toolbar"><button class="import btn"><i class="icon-cloud-download"></i> Import From Google Doc</button></div>
+    </div>
+    <hr>
+    <div id="slides"></div>
+    <label class="checkbox">
+      Confirm <input id="confirm_delete" type="checkbox"> 
+    </label>
+    <div class="btn-toolbar">
+      <button class="save btn btn-primary">Save</button>
+      <button class="btn btn-danger"><i class="icon-trash"></i> Delete</button>
+    </div>
+  </fieldset>
+</script>
+
+
+<script id="edit-slide-template" type="text/underscore-template">
+  <form>
+    <div id="slide_attributes">
+      <div>
+        <input  id="<%= slide.cid %>-slide-title"
+                class="title input-xxlarge"
+                type="text"
+                placeholder="Slide Title" 
+                value="<%= slide.title %>"/>
+      </div>
+      <div>
+        <div id="<%= slide.cid %>-wysihtml5-toolbar" class="toolbar" style="display: none;">
+          <a data-wysihtml5-command="bold" title="CTRL+B">bold</a> |
+          <a data-wysihtml5-command="italic" title="CTRL+I">italic</a> |
+          <a data-wysihtml5-command="createLink">insert link</a> |
+          <a data-wysihtml5-command="insertImage">insert image</a> |
+          <a data-wysihtml5-command="formatBlock" data-wysihtml5-command-value="h1">h1</a> |
+          <a data-wysihtml5-command="formatBlock" data-wysihtml5-command-value="h2">h2</a> |
+          <a data-wysihtml5-command="insertUnorderedList">insertUnorderedList</a> |
+          <a data-wysihtml5-command="insertOrderedList">insertOrderedList</a> |
+          <a data-wysihtml5-command="foreColor" data-wysihtml5-command-value="red">red</a> |
+          <a data-wysihtml5-command="foreColor" data-wysihtml5-command-value="green">green</a> |
+          <a data-wysihtml5-command="foreColor" data-wysihtml5-command-value="blue">blue</a> |
+          <a data-wysihtml5-command="undo">undo</a> |
+          <a data-wysihtml5-command="redo">redo</a> |
+          <a data-wysihtml5-command="insertSpeech">speech</a>
+          <a data-wysihtml5-action="change_view">switch to html view</a>
+          
+          <div data-wysihtml5-dialog="createLink" style="display: none;">
+            <label>
+              Link:
+              <input data-wysihtml5-dialog-field="href" value="http://">
+            </label>
+            <a data-wysihtml5-dialog-action="save">OK</a>&nbsp;<a data-wysihtml5-dialog-action="cancel">Cancel</a>
+          </div>
+          
+          <div data-wysihtml5-dialog="insertImage" style="display: none;">
+            <label>
+              Image:
+              <input data-wysihtml5-dialog-field="src" value="http://">
+            </label>
+            <label>
+              Align:
+              <select data-wysihtml5-dialog-field="className">
+                <option value="">default</option>
+                <option value="wysiwyg-float-left">left</option>
+                <option value="wysiwyg-float-right">right</option>
+              </select>
+            </label>
+            <a data-wysihtml5-dialog-action="save">OK</a>&nbsp;<a data-wysihtml5-dialog-action="cancel">Cancel</a>
+          </div>
+        </div>
+        
+        <textarea id="<%= slide.cid %>-slide-content"
+                  class="slide-content" 
+                  style="width:95%;height:400px"
+                  placeholder="Enter content"><%= slide.content %></textarea>
+        <br />
+        <input type="reset" value="Reset form!">
+      </div>
+    </div>
+  </form>
+
+  <div class="actions-container">
+    <button class="btn btn-info test-actions">Test Actions</button>
+    <table class="table">
+      <thead>
+        <tr>
+          <th> Action </th>
+          <th> Target </th>
+          <th> Duration </th>
+          <th> Additional </th>
+        </tr>
+      </thead>
+    </table>
+    <div id="<%= slide.cid %>-slide-actions" class="slide-actions">
+    </div>
+  </div>
+
+  </div>  
+</script>
+
+<script id="show-slide-edit-actions-template" type="text/underscore-template">
+  <div id="slide_attributes">
+    <div>
+      <h2 id="<%= slide.cid %>-slide-title"><%= slide.title %></h2>
+    </div>
+    <div>        
+      <div id="<%= slide.cid %>-slide-content"><%= slide.content %></div>
+    </div>
+  </div>
+
+  <h2><span class="h2-header">Slide Actions</span></h2>
+  <div class="save_status"></div>
+  <div id="<%= slide.cid %>-slide-actions"></div>
+
+  <div class="btn-toolbar">
+    <button class="save btn btn-primary">Save</button>
+    <button class="btn btn-danger"><i class="icon-trash"></i> Delete</button>
+  </div>  
+</script>
+
+<script id="edit-action-template" type="text/underscore-template">
+<tr class="action">
+  <td class="attribute name">
+    <select name="name">
+      <% _.each(actionsAvailable, function(name) { %>
+        <option value="<%= name %>" 
+                <% if (action.name == name ) { %> selected="selected" <% }; %> ><%= name %></option>
+      <% }); %>
+    </select>
+  </td>
+  <td class="attribute target">
+    <select name="target">
+      <% _.each(actionTargets, function(selector) { %>
+        <option value="<%= selector %>" 
+                <% if (action.target == selector ) { %> selected="selected" <% }; %> ><%= selector %></option>
+      <% }); %>
+    </select>
+  </td>
+  <td class="attribute duration">
+    <input class="input-small" 
+            type="text" 
+            name="duration" 
+            data-attribute-name="duration" 
+            value="<%= action.duration %>" /> ms
+  </td>
+  <td class="action_attributes"></td>
+</tr>
+</script>
+
+<script type="text/javascript" language="javascript">
+
+Dynamo.CurrentUser = function() { 
+  Dynamo._CurrentUser = new User();
+  Dynamo._CurrentUser.id = Dynamo.CURRENT_USER_ID;
+  return Dynamo._CurrentUser
+};
+
+// var GoogleDocXelView = Backbone.View.extend({
+  
+//   initialize: function() {
+//     _.bindAll(this);
+
+//     var template = $('script#GoogleDocXelEditTemplate').html();
+//     this._template = _.template(template);
+//     this.$status = $('<div>');
+    
+//     this.model.on('fetch:start', this.fetchStart);
+//     this.model.on('fetch:success', this.fetchSuccess);
+//     this.model.on('fetch:error', this.fetchError);
+    
+//     this.model.on('change:private_url', this.refetch);
+//     // this.model.on('change:private_url', this.render);
+//     console.log("completed GoogleDocXelView initialize");
+//   },
+
+//   events: {
+//     "click button#refetch" : "refetch"
+//   },
+
+//   fetchStart: function() {
+//     console.log("in fetchStart render");
+//     this.$status.html("Fetching Document...");
+//   },
+
+//   fetchSuccess: function() {
+//     console.log("in fetchSuccess render");
+//     this.$status.html("Finished (at "+ this.model.get("last_fetched_at") +").");
+//   },
+
+//   fetchError: function() {
+//     console.log("in fetchError render");
+//     error_html = "<h3>ERROR</h3>" +
+//       "<div>Failed Fetch of "+this.model.get('public_url')+" </div>" +
+//       "<div>"+this.model.get("last_failed_fetch_at")+"</div>";
+//     this.$status.html( error_html );
+//   },
+
+//   refetch: function() {
+//     this.model.fetchDocument();
+//     this.model.extractGDriveKey();
+//     this.render();
+//   },  
+
+//   // updateStatus: function() {
+//   //   console.log("in GoogleDocXelView updateStatus");
+//   //   this.model.extractGDriveKey();
+//   //   recs = this.model.recommend();
+
+//   //   if ( _.all(recs, function(attribute_recs_array) { return (attribute_recs_array.length === 0)}) ) {
+//   //     this.refetch();
+//   //   } else { 
+//   //     console.l  og("There are some issues with your provided url: ", recs);    
+//   //   };
+
+//   // },
+
+//   render: function() {
+//     var self = this;
+//     this.$el.html( this._template( self.model.toJSON() ) );
+//     var $s = this.$el.find('div#fetch_status');
+//     $s.length ? this.$status = $s : this.$status = $('<div>');
+//   }
+
+// });
+
+// var GoogleDocXelAsGuide = Backbone.View.extend({
+
+//   initialize: function() {
+//     _.bindAll(this);
+//     this.current_slide = 0;
+//     var t = $('script#slide-template').html();
+//     this.slide_template = _.template(t);
+//     this.model.on('change:fetched_html', this.rebuild);
+//     this._template = _.template(this.template);
+
+//     console.log("completed GoogleDocXelAsGuide initialize");
+//   },
+
+//   calcNextSlide: function(click_event) {
+//     $clicked = $(click_event.currentTarget);
+//     switch( $clicked.data('goTo') ) {
+//       case 'previous':
+//         this.current_slide--;
+//         this.render();
+//         return;
+//       case 'next':
+//         this.current_slide--;
+//         this.render();
+//         return;
+//       case 'start':
+//         this.current_slide = 0;
+//         this.render();
+//         return;
+//       case 'end':
+//         this.current_slide = this.gDoc.numPages();
+//         this.render();
+//         return;
+//       default: 
+//         try {
+//           this.current_slide = parseInt($clicked.data('goTo'));
+//           this.render();
+//         }
+//         catch (error) {
+//           this.$el.html("<div>Did not understand button's directive to go to '"+$clicked.data('goTo')+"'</div>");
+//         };
+//     };
+//   },
+
+//   events: {
+//     "click button.change_slide" : "calcNextSlide"
+//   },
+
+//   _errorTemplate: "" + 
+//     "<div class='error_message'>There was an error processing the document into a Guide</div>" +
+//     "<div class='troubleshooting'>" +
+//       "In an attempt to fix the problem, here are some suggestions:" +
+//       "<ol>" +
+//         "<li>Does every intended slide of the Google Document begin with a title?</li>" +
+//         "<li>Does every intended slide of the Google Document end with a page break?</li>" +
+//       "</ol>" +
+//     "</div>",
+
+//   template: "" + 
+//     "<div>Title: <%= title %> </div>" +
+//     "<div>Number of Slides:<%= page_count %></div>" +
+//     "<div>Character Count:<%= char_count %></div>" +
+//     "<div id='guide_container'><%= slide_html %></div>",
+  
+//   rebuild: function() {
+//     // try {
+//       this.gDoc = new GoogleDoc(this.model.get('fetched_html'));
+//       this.current_slide = 0;
+//       this.render();
+//     // }
+//     // catch (error) {
+//     //   console.warn(error);
+//     //   this.$el.html(this._errorTemplate);
+//     // };
+//   },
+
+//   render: function() {
+
+//     console.log("in GoogleDocXelAsGuide render");
+//     var self = this;
+
+//     if (this.gDoc) {
+//       var slide_html = self.slide_template({ slide_content: self.gDoc.page(self.current_slide) });
+//       self.$el.html(
+//         self._template({
+//           title: self.gDoc.title,
+//           page_count: self.gDoc.length,
+//           char_count: self.model.get('fetched_html').length,
+//           slide_html: slide_html
+//         }) 
+//       );
+//     } else {
+//       self.$el.html("<div>Cannot Display Guide: The Google Document has not been fetched from Google</div>");
+//     };
+
+//   }
+
+// });
+
+loadPage = function() {
+
+  templates.choose_one_xelement = $("script#choose-xelement-from-collection").html();
+  templates.edit_guide = $("script#edit-guide-template").html();
+  templates.edit_slide = $("script#edit-slide-template").html();
+  templates.show_slide_edit_actions = $("script#show-slide-edit-actions-template").html();
+  templates.manage_collection_widget = $("script#manage-collection-template").html();
+  templates.collection_widget_element = $("script#manage-collection-element-template").html();
+
+  CurrentGuide = new GuideModel({});
+
+  guides_list = new Dynamo.ChooseOneXelementFromCollectionView({
+    el: "div#guides_index",
+    collection: GUIDES,
+    canCreateNew: true,
+    xelement_type: 'guide'
+  });
+
+  guides_list.on("element:chosen", function() {
+
+    CurrentGuide = null;
+    CurrentGuide = guides_list.chosen_element;
+    
+    editGuideView = null;
+    editGuideView = new Dynamo.EditGuideView({
+      el: "div#current-guide",
+      model: CurrentGuide,
+      iframe_selector: "iframe#guided-page"
+    });
+
+    editGuideView.on("guided_page:loaded", function() {
+      $( "div#iframe-container").resizable({ alsoResize: "iframe#guided-page" });
+      _.each(editGuideView.usableElements, function(el, i) {
+        $("span#elements_title").text("Available Elements");
+        $("div#available_elements").append("<span>"+el.tagName.toLowerCase()+"#"+el.idName+"."+el.className+", </span>");
+        if ( typeof(editSlideView) !== "undefined" ) {
+          editSlideView.options.actionTargets = editGuideView.usableElements;
+          editSlideView.render();
+        };
+      });
+    });
+
+    editGuideView.on("slide:chosen", function() {
+
+      editSlideView = null;
+      editSlideView = new Dynamo.EditSlideView({
+        el: "div#current-slide",
+        guidedPageSelector: editGuideView.options.iframe_selector,
+        model: editGuideView.current_slide,
+        actionTemplate: $('script#edit-action-template').html(),
+        actionTargets: _.map(editGuideView.usableElements, function(el) {
+          var r = el.tagName; 
+          if (el.idName) { r = r+"#"+el.idName };
+          if (el.className) { r = r+"."+(el.className.split(' ')).join('.') };
+          return r;
+        })
+      });
+      editSlideView.render();
+
+    });
+    editGuideView.render();
+
+  });
+
+
+  guides_list.render();
+
+};
+
+$(window).load(function() {
+  
+  initializeLoadAndThen(loadPage);
+  $("#iframe-container").hide();
+  $("#slide-container").draggable();
+
+  // File -> Publish to the Web -> Start Publishing
+
+  // var doc = new GoogleDocumentXel({ private_url: "https://docs.google.com/document/d/16AD26pGzmjuzqkY_xkIhsA6SnCdoDHJlzHmPYr6XyUk/edit#heading=h.49jwl5fof01u "});
+  // var editDocView = new GoogleDocXelView({
+  //       el: "div#google_doc",
+  //       model: doc
+  //     });  
+  // var guideView = new GoogleDocXelAsGuide({
+  //       el: "div#as_guide",
+  //       model: doc
+  //     });
+
+
+  // $('input#private_url').change(function(change_event) {
+  //   doc.set( "private_url", $(change_event.currentTarget).val() );
+  // });
+
+  // editDocView.render();
+
+});
+
+// Load guides from Mongo;
+// New guide form allows import from Google Doc.
+// Selecting a guide loads it in the editor.
+// Referrent Page loads in the Iframe;
+//  - Page title
+
+</script>
+</head>
+<body>
+  <div class="container-fluid" style="padding-top:20px;">
+    <h1>Guide Editor</h1>
+    <div class="row-fluid">
+      <div class="span6">
+        <div id="guides_index" class="swell">
+        </div>
+        <hr>
+        <div id="slide-container" class="swell" style="z-index:999999;">
+          <h2 class="h2-move"><span class="h2-header">Current Slide</span><i class="icon-move pull-right" style="color:#666"></i></h2>
+          <div class="clearfix"></div>
+          <div id="current-slide"></div>
+        </div>
+      </div>
+      <div id="guide-container" class="span6 swell">
+        <h2><span class="h2-header">Current Guide</span></h2>
+        <div id="current-guide"></div>
+      </div>
+    </div>
+
+    <!-- <div id="iframe-container" style="padding:5px;margin:0 auto;text-align:center;width:300px;border:5px solid black;"> -->
+    <div id="iframe-container" class="connect-modal">
+      <iframe id="guided-page"></iframe>
+    </div>
+    <h2><span class="h2-header" id="elements_title"></span></h2>
+    <div class="clearfix"></div>
+    <div id="available_elements"></div>
+  </div>
+<!--   <h2 id="referred_page_title"></h2>
+  <iframe id="referred_page_preview">
+  </iframe>
+  <div id="edit_slide">
+  </div>
+  <div id="guide_slides_index">
+  </div> -->
+</body>
+</html>
