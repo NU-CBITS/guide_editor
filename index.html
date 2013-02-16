@@ -228,7 +228,7 @@
 
           <div class="btn-toolbar" 
             title="re-importing the document will wipe any changes (including actions) you have made to slides here in the guide editor">
-            <button class="reimport btn btn-danger"><i class="icon-cloud-download"></i> GDoc Import</button>
+            <button class="import btn btn-danger"><i class="icon-cloud-download"></i> GDoc Import</button>
             <button class="clear-import btn btn-danger"
               title="Clearing and importing from another document will wipe any changes (including actions) that you have made in the guide editor"
               ><i class="icon-cloud-download"></i> Clear Import</button>
@@ -576,10 +576,15 @@ loadPage = function() {
 
   guides_list.on("element:chosen", function() {
 
+    //clear any detritis
     CurrentGuide = null;
+    $( "div#current-slide").empty();
+    $( "div#iframe-container").find("iframe:first").contents().empty();
+
     CurrentGuide = guides_list.chosen_element;
     
     editGuideView = null;
+
     editGuideView = new Dynamo.EditGuideView({
       el: "div#current-guide",
       model: CurrentGuide,
