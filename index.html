@@ -17,6 +17,24 @@
     cursor: pointer; 
   }
 
+  div.collection_widget .elements {
+    display:table;
+    width:100%;
+  }
+
+  div.collection_widget .elements div.action.element {
+/*    display:table-row;*/
+  }
+
+  div.collection_widget .elements div.edit_container div.action {
+    display:table-row;
+  }
+
+  div.collection_widget div.elements div.edit_container div.action span.cell{
+    display:table-cell;
+    margin:0 auto;
+  }
+
 </style>
 
 <script language="Javascript" src="js/vendor/state-machine.min.js"></script>
@@ -318,18 +336,17 @@
   </form>
 
   <div class="actions-container">
-    <button class="btn btn-info test-actions">Test Actions</button>
-    <table class="table">
-      <thead>
-        <tr>
-          <th> Action </th>
-          <th> Target </th>
-          <th> Duration </th>
-          <th> Additional </th>
-        </tr>
-      </thead>
-    </table>
-    <div id="<%= slide.cid %>-slide-actions" class="slide-actions">
+    <div class="table" style="display:table; width:100%">
+      <div style="display:table-row;">
+          <span style="display:table-cell;"> Label </span>
+          <span style="display:table-cell;"> Action </span>
+          <span style="display:table-cell;"> Target </span>
+          <span style="display:table-cell;"> Duration </span>
+          <span style="display:table-cell;"> Additional </span>
+          <span style="display:table-cell;"> Test </span>
+      </div>
+    </div>
+    <div id="<%= slide.cid %>-slide-actions" class="slide-actions" style="width:100%">
     </div>
   </div>
 
@@ -357,16 +374,19 @@
 </script>
 
 <script id="edit-action-template" type="text/underscore-template">
-<tr class="action">
-  <td class="attribute name">
-    <select name="name">
-      <% _.each(actionsAvailable, function(name) { %>
-        <option value="<%= name %>" 
-                <% if (action.name == name ) { %> selected="selected" <% }; %> ><%= name %></option>
+<div class="action">
+  <span class="cell attribute">
+    <input class="input-small" name="label" type="text" value="<%= action.label %>" placeholder="Button text"/>
+  </span>
+  <span class="cell attribute effect">
+    <select name="effect" class="input-small">
+      <% _.each(actionsAvailable, function(effect_name) { %>
+        <option value="<%= effect_name %>" 
+          <% if (action.effect == effect_name ) { %> selected="selected" <% }; %> ><%= effect_name %></option>
       <% }); %>
     </select>
-  </td>
-  <td class="attribute target">
+  </span>
+  <span class="cell attribute target">
     <select name="target">
       <% _.each(actionTargets, function(selector) { %>
         <option value="<%= selector %>" <% if (action.target == selector ) { %> selected="selected" <% }; %> >
@@ -374,16 +394,19 @@
         </option>
       <% }); %>
     </select>
-  </td>
-  <td class="attribute duration">
+  </span>
+  <span class="cell attribute duration">
     <input class="input-small" 
             type="text" 
             name="duration" 
             data-attribute-name="duration" 
             value="<%= action.duration %>" /> ms
-  </td>
-  <td class="action_attributes"></td>
-</tr>
+  </span>
+  <span class="cell attribute action_attributes"></span>
+  <span>
+    <button class="cell test-action"><%= action.label %></button>
+  </span>
+</div>
 </script>
 
 <script type="text/javascript" language="javascript">
