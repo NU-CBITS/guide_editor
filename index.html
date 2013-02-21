@@ -173,8 +173,9 @@
     <div id="guide_attributes">
       <label class="text" for="guide_title">Title 
         <input type="text" placeholder="Guide Title" id="guide_title" value="<%= guide.title %>" class="span6">
-      </label>  
-      <%; console.log("guidedPageState: ", guidedPageState); if (guidedPageState == "blank") { %>
+      </label>
+      <%; console.log("guidedPageState: ", guidedPageState); %>
+      <% if (!guide.guided_page_url) { %>
         <h3> Guided Page </h3>
         <div><p>
           Specify the current version of the page for which this guide is being developed.   
@@ -209,64 +210,16 @@
 
       <% }; %>
 
-      <% if ( (guidedPageState != "blank") && (gDocState == "blank") ) { %>
-        <hr>
-        <div>
-          <h3> Google Doc Import </h3>
-          <p>Now, you must specify an initial import of slide content from a google doc.</p>
-          <p>In order for the import to succeed, The Google Doc:
-            <ul>
-              <li>Must have every page begin with a <strong><em>Title</em></strong> element</li>
-              <li>At the end of each section that you would like to be its own slide, insert a <strong><em>Page Break</em></strong> 
-                  ('Ctrl+Enter' keys, or Insert -> Page Break) 
-              </li>
-              <li>The Google Doc must be <strong><em>Published to the web</em></strong> (File -> Publish to the web...)</li>
-            </ul>
-          </p>
-          <p>Please provide the private URL of the google document (not the one given to you in the 'Publish to the web...' Dialog)</p>     
-          <input id="private_gdoc_url" 
-                  type="text" 
-                  class="span12"
-                  placeholder="Google Drive Document URL" 
-                  value="<%= guide.private_gdoc_url %>" >
-          <div class="btn-toolbar"><button class="import btn btn-primary"><i class="icon-cloud-download"></i> GDoc Import</button></div>
-        </div>
-      <% }; %>
-
-      <% if ( (guidedPageState != "blank") && (gDocState != "blank") ) { %>
-        <hr>
-        <div>
-          <h3> Google Doc Import </h3>     
-          <input id="private_gdoc_url" 
-                  type="text" 
-                  class="span12"
-                  placeholder="Google Drive Document URL" 
-                  value="<%= guide.private_gdoc_url %>" 
-                  disabled="disabled">
-
-          <div class="btn-toolbar" 
-            title="re-importing the document will wipe any changes (including actions) you have made to slides here in the guide editor">
-            <button class="import btn btn-danger"><i class="icon-cloud-download"></i> GDoc Import</button>
-            <button class="clear-import btn btn-danger"
-              title="Clearing and importing from another document will wipe any changes (including actions) that you have made in the guide editor"
-              ><i class="icon-cloud-download"></i> Clear Import</button>
-          </div>
-        </div>
-      <% }; %>
-
-      <% if ( (guidedPageState != "blank") && (gDocState != "blank") ) { %> 
+      <div class="on-slide-edit" style="<% if (!guide.guided_page_url) { %> display:none; <%} else { %> display:block; <% }; %>">
         <hr>
         <div id="slides"></div>
         <hr>
         <div class="save_status"></div>
         <div class="btn-toolbar">
           <button class="save btn btn-primary">Save Guide</button>
-          <button class="btn btn-danger">
-            <i class="icon-trash"></i> Delete
-            <label class="checkbox"> Confirm Delete<input id="confirm_delete" type="checkbox"> </label>
-          </button>
+          <button class="delete btn btn-danger "><i class="icon-trash"></i> Delete</button>
         </div>
-      <% }; %>  
+      </div>
 
   </fieldset>
 </script>
@@ -277,7 +230,7 @@
     <div id="slide_attributes">
       <div>
         <input  id="<%= slide.cid %>-slide-title"
-                class="title input-xxlarge"
+                class="title input-large"
                 type="text"
                 placeholder="Slide Title" 
                 value="<%= slide.title %>"/>
