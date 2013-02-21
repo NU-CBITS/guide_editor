@@ -556,13 +556,21 @@ loadPage = function() {
     CurrentGuide = null;
     $( "div#current-slide").empty();
     $( "div#iframe-container").find("iframe:first").contents().empty();
+    $( "div#current-guide" ).empty();
 
     CurrentGuide = guides_list.chosen_element;
-    
-    editGuideView = null;
 
+    if (  CurrentGuide.isNew() && 
+          !_.contains(guides_list.collection, CurrentGuide) ) {
+      
+      guides_list.collection.add(CurrentGuide);
+      guides_list.render();
+      
+    };
+    CurrentGuide.on('change:title', guides_list.render);
+
+    editGuideView = null;
     editGuideView = new Dynamo.EditGuideView({
-      el: "div#current-guide",
       model: CurrentGuide,
       iframe_selector: "iframe#guided-page"
     });
@@ -592,10 +600,13 @@ loadPage = function() {
           return r;
         })
       });
+
+
       editSlideView.render();
 
     });
-    editGuideView.render();
+    
+    $( "div#current-guide" ).append(editGuideView.render().$el);
 
   });
 
