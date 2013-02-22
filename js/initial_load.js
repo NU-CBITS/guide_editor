@@ -67,12 +67,6 @@ initializeLoadAndThen = function(callback) {
       };
     }).compact().value());
 
-    // SLIDE_ACTIONS = new SlideActionsCollection(XELEMENTS.map(function(xel) {
-    //   if (xel.get_field_value("xelement_type") == "slide_action") {
-    //     return (new QuestionAboutDataModel(xel.attributes));
-    //   }
-    // }));
-
     GUIDES = new GuideCollection(XELEMENTS.chain().map(function(xel) {
       if (xel.get_field_value("xelement_type") == "guide") {
         return (new GuideModel(xel.attributes))

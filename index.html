@@ -76,7 +76,7 @@
   
   <div>
     <% if (_.isEmpty(elements)) { %>
-      <div class="list-item yellow-header"><p>There are no existing <%= collection_name %>s</p></div>
+      <div class="list-item yellow-header"><p>There are no existing <%= collection_name %></p></div>
     <% } else { %>
       <h4><label>Choose One:</label></h4>
       <ul style="list-style: none;">
@@ -132,41 +132,6 @@
 <% }; %>
 </script>
 
-<script id="GoogleDocXelEditTemplate" type="text/underscore-template">
-  <div> 
-    <div id="fetch_status"></div>
-    <% if (private_url) {%>
-      <a href="<%= private_url %>">The Private Document</a>
-    <% } else { %>
-      No Document URL provided.
-    <% }; %>
-  </div>
-  <% if (gDriveKey) { %>
-    <div>
-      <div>Document Key: <%= gDriveKey %> </div>
-      <div><a href="<%= public_url %>">The Published Document</a></div>
-      <div>
-        <button id="refetch"> Re-Fetch the Published Version </button>
-      </div>
-    </div>
-  <% }; %>
-</script>
-
-<script id="slide-template" type="text/underscore-template">
-  <div class="modal">
-    <div class="modal-header">
-      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-    </div>
-    <div class="modal-body">
-      <%= slide_content %>
-    </div>
-    <div class="modal-footer">
-      <button class="btn pull-left change_slide" data-goTo="previous">Previous</button>
-      <button class="btn btn-primary change_slide" data-goTo="next">Next</button>
-    </div>
-  </div>
-</script>
-
 <script id="edit-guide-template" type="text/underscore-template">
   <fieldset>
     
@@ -204,7 +169,7 @@
           <button class="load-guided-page btn"><i class="icon-upload-alt"></i> Reload</button>
           <button 
             class="clear-guided-page btn btn-danger"
-            title="Changing the page to which this guide refers to has a high likelihood of screwing things up.  Make sure you <strong>know what you are doing.</strong>"
+            title="Changing the page to which this guide refers to has a chance of screwing up any actions you've configured.  Make sure you <strong>know what you are doing.</strong>"
           ><i class="icon-upload-alt"></i> Clear Guided Page</button>
         </div>
 
@@ -214,6 +179,7 @@
         <hr>
         <div id="slides"></div>
         <hr>
+        <div id="last-save"></div>
         <div class="save_status"></div>
         <div class="btn-toolbar">
           <button class="save btn btn-primary">Save Guide</button>
@@ -224,6 +190,20 @@
   </fieldset>
 </script>
 
+<script id="slide-template" type="text/underscore-template">
+  <div class="modal">
+    <div class="modal-header">
+      <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+    </div>
+    <div class="modal-body">
+      <%= slide_content %>
+    </div>
+    <div class="modal-footer">
+      <button class="btn pull-left change_slide" data-goTo="previous">Previous</button>
+      <button class="btn btn-primary change_slide" data-goTo="next">Next</button>
+    </div>
+  </div>
+</script>
 
 <script id="edit-slide-template" type="text/underscore-template">
   <form>
@@ -306,26 +286,6 @@
   </div>  
 </script>
 
-<script id="show-slide-edit-actions-template" type="text/underscore-template">
-  <div id="slide_attributes">
-    <div>
-      <h2 id="<%= slide.cid %>-slide-title"><%= slide.title %></h2>
-    </div>
-    <div>        
-      <div id="<%= slide.cid %>-slide-content"><%= slide.content %></div>
-    </div>
-  </div>
-
-  <h2><span class="h2-header">Slide Actions</span></h2>
-  <div class="save_status"></div>
-  <div id="<%= slide.cid %>-slide-actions"></div>
-
-  <div class="btn-toolbar">
-    <button class="save btn btn-primary">Save</button>
-    <button class="btn btn-danger"><i class="icon-trash"></i> Delete</button>
-  </div>  
-</script>
-
 <script id="edit-action-template" type="text/underscore-template">
 <div class="action">
   <span class="cell attribute">
@@ -366,182 +326,13 @@
 
 Dynamo.AUTHENTICATING_USER_ID = function() { return "TEST-USER-GUID" };
 
-// var GoogleDocXelView = Backbone.View.extend({
-  
-//   initialize: function() {
-//     _.bindAll(this);
-
-//     var template = $('script#GoogleDocXelEditTemplate').html();
-//     this._template = _.template(template);
-//     this.$status = $('<div>');
-    
-//     this.model.on('fetch:start', this.fetchStart);
-//     this.model.on('fetch:success', this.fetchSuccess);
-//     this.model.on('fetch:error', this.fetchError);
-    
-//     this.model.on('change:private_url', this.refetch);
-//     // this.model.on('change:private_url', this.render);
-//     console.log("completed GoogleDocXelView initialize");
-//   },
-
-//   events: {
-//     "click button#refetch" : "refetch"
-//   },
-
-//   fetchStart: function() {
-//     console.log("in fetchStart render");
-//     this.$status.html("Fetching Document...");
-//   },
-
-//   fetchSuccess: function() {
-//     console.log("in fetchSuccess render");
-//     this.$status.html("Finished (at "+ this.model.get("last_fetched_at") +").");
-//   },
-
-//   fetchError: function() {
-//     console.log("in fetchError render");
-//     error_html = "<h3>ERROR</h3>" +
-//       "<div>Failed Fetch of "+this.model.get('public_url')+" </div>" +
-//       "<div>"+this.model.get("last_failed_fetch_at")+"</div>";
-//     this.$status.html( error_html );
-//   },
-
-//   refetch: function() {
-//     this.model.fetchDocument();
-//     this.model.extractGDriveKey();
-//     this.render();
-//   },  
-
-//   // updateStatus: function() {
-//   //   console.log("in GoogleDocXelView updateStatus");
-//   //   this.model.extractGDriveKey();
-//   //   recs = this.model.recommend();
-
-//   //   if ( _.all(recs, function(attribute_recs_array) { return (attribute_recs_array.length === 0)}) ) {
-//   //     this.refetch();
-//   //   } else { 
-//   //     console.l  og("There are some issues with your provided url: ", recs);    
-//   //   };
-
-//   // },
-
-//   render: function() {
-//     var self = this;
-//     this.$el.html( this._template( self.model.toJSON() ) );
-//     var $s = this.$el.find('div#fetch_status');
-//     $s.length ? this.$status = $s : this.$status = $('<div>');
-//   }
-
-// });
-
-// var GoogleDocXelAsGuide = Backbone.View.extend({
-
-//   initialize: function() {
-//     _.bindAll(this);
-//     this.current_slide = 0;
-//     var t = $('script#slide-template').html();
-//     this.slide_template = _.template(t);
-//     this.model.on('change:fetched_html', this.rebuild);
-//     this._template = _.template(this.template);
-
-//     console.log("completed GoogleDocXelAsGuide initialize");
-//   },
-
-//   calcNextSlide: function(click_event) {
-//     $clicked = $(click_event.currentTarget);
-//     switch( $clicked.data('goTo') ) {
-//       case 'previous':
-//         this.current_slide--;
-//         this.render();
-//         return;
-//       case 'next':
-//         this.current_slide--;
-//         this.render();
-//         return;
-//       case 'start':
-//         this.current_slide = 0;
-//         this.render();
-//         return;
-//       case 'end':
-//         this.current_slide = this.gDoc.numPages();
-//         this.render();
-//         return;
-//       default: 
-//         try {
-//           this.current_slide = parseInt($clicked.data('goTo'));
-//           this.render();
-//         }
-//         catch (error) {
-//           this.$el.html("<div>Did not understand button's directive to go to '"+$clicked.data('goTo')+"'</div>");
-//         };
-//     };
-//   },
-
-//   events: {
-//     "click button.change_slide" : "calcNextSlide"
-//   },
-
-//   _errorTemplate: "" + 
-//     "<div class='error_message'>There was an error processing the document into a Guide</div>" +
-//     "<div class='troubleshooting'>" +
-//       "In an attempt to fix the problem, here are some suggestions:" +
-//       "<ol>" +
-//         "<li>Does every intended slide of the Google Document begin with a title?</li>" +
-//         "<li>Does every intended slide of the Google Document end with a page break?</li>" +
-//       "</ol>" +
-//     "</div>",
-
-//   template: "" + 
-//     "<div>Title: <%= title %> </div>" +
-//     "<div>Number of Slides:<%= page_count %></div>" +
-//     "<div>Character Count:<%= char_count %></div>" +
-//     "<div id='guide_container'><%= slide_html %></div>",
-  
-//   rebuild: function() {
-//     // try {
-//       this.gDoc = new GoogleDoc(this.model.get('fetched_html'));
-//       this.current_slide = 0;
-//       this.render();
-//     // }
-//     // catch (error) {
-//     //   console.warn(error);
-//     //   this.$el.html(this._errorTemplate);
-//     // };
-//   },
-
-//   render: function() {
-
-//     console.log("in GoogleDocXelAsGuide render");
-//     var self = this;
-
-//     if (this.gDoc) {
-//       var slide_html = self.slide_template({ slide_content: self.gDoc.page(self.current_slide) });
-//       self.$el.html(
-//         self._template({
-//           title: self.gDoc.title,
-//           page_count: self.gDoc.length,
-//           char_count: self.model.get('fetched_html').length,
-//           slide_html: slide_html
-//         }) 
-//       );
-//     } else {
-//       self.$el.html("<div>Cannot Display Guide: The Google Document has not been fetched from Google</div>");
-//     };
-
-//   }
-
-// });
-
 loadPage = function() {
 
   templates.choose_one_xelement = $("script#choose-xelement-from-collection").html();
   templates.edit_guide = $("script#edit-guide-template").html();
   templates.edit_slide = $("script#edit-slide-template").html();
-  templates.show_slide_edit_actions = $("script#show-slide-edit-actions-template").html();
   templates.manage_collection_widget = $("script#manage-collection-template").html();
   templates.collection_widget_element = $("script#manage-collection-element-template").html();
-
-  CurrentGuide = new GuideModel({});
 
   guides_list = new Dynamo.ChooseOneXelementFromCollectionView({
     el: "div#guides_index",
@@ -550,23 +341,48 @@ loadPage = function() {
     xelement_type: 'guide'
   });
 
+  onGuideSave = function(model, response, options) {
+    alert("Guide saved");
+    console.log("Guide Saved:", model, response, options);
+    guides_list.collection.add(CurrentGuide);
+    guides_list.render();
+  };
+
+  onFailedGuideSave = function(model, xhr, options) {
+      alert("There was an error saving the guide; please check the log;");
+      console.warn("could not save model:", model, xhr, options);
+  };
+
   guides_list.on("element:chosen", function() {
 
-    //clear any detritis
-    CurrentGuide = null;
+
+    //Clear cruft    
+    $( "div#current-guide" ).empty();
     $( "div#current-slide").empty();
     $( "div#iframe-container").find("iframe:first").contents().empty();
-    $( "div#current-guide" ).empty();
+    if  ( !_.isUndefined(window.CurrentGuide) && 
+          _.isObject(CurrentGuide) && 
+          CurrentGuide.stopPeriodicSaving
+        ) {
+      CurrentGuide.stopPeriodicSaving();
+      CurrentGuide = null;  
+    };
+
+    //Start handling newly chosen guide:
 
     CurrentGuide = guides_list.chosen_element;
 
-    if (  CurrentGuide.isNew() && 
-          !_.contains(guides_list.collection, CurrentGuide) ) {
-      
-      guides_list.collection.add(CurrentGuide);
-      guides_list.render();
-      
+    //Save New Guides Immediately
+    if (  CurrentGuide.isNew() && !_.contains(guides_list.collection, CurrentGuide) ) {
+      CurrentGuide.save(null, { success: onGuideSave, error:  onFailedGuideSave});
     };
+
+    //Initiate Interval Saving:
+    CurrentGuide.on('periodic_save:suggested', function() {
+      console.log("Saving due to periodic_save suggestion!");
+      CurrentGuide.save(null, { success: onGuideSave, error:  onFailedGuideSave});
+    });
+    CurrentGuide.startPeriodicSaving(5); //check to save every 5 seconds.
     CurrentGuide.on('change:title', guides_list.render);
 
     editGuideView = null;
@@ -578,7 +394,7 @@ loadPage = function() {
     editGuideView.on("guided_page:loaded", function() {
       $( "div#iframe-container").resizable({ alsoResize: "iframe#guided-page" });
       _.each(editGuideView.usableElements, function(el, i) {
-        if ( typeof(editSlideView) !== "undefined" ) {
+        if ( typeof(editSlideView) !== "undefined" && editSlideView.options) {
           editSlideView.options.actionTargets = editGuideView.usableElements;
           editSlideView.render();
         };
@@ -621,32 +437,13 @@ $(window).load(function() {
   $("#iframe-container").hide();
   $("#slide-container").draggable();
 
-  // File -> Publish to the Web -> Start Publishing
-
-  // var doc = new GoogleDocumentXel({ private_url: "https://docs.google.com/document/d/16AD26pGzmjuzqkY_xkIhsA6SnCdoDHJlzHmPYr6XyUk/edit#heading=h.49jwl5fof01u"});
-  // var editDocView = new GoogleDocXelView({
-  //       el: "div#google_doc",
-  //       model: doc
-  //     });  
-  // var guideView = new GoogleDocXelAsGuide({
-  //       el: "div#as_guide",
-  //       model: doc
-  //     });
-
-
-  // $('input#private_url').change(function(change_event) {
-  //   doc.set( "private_url", $(change_event.currentTarget).val() );
-  // });
-
-  // editDocView.render();
-
 });
 
 // Load guides from Mongo;
 // New guide form allows import from Google Doc.
 // Selecting a guide loads it in the editor.
 // Referrent Page loads in the Iframe;
-//  - Page title
+// - Page title
 
 </script>
 </head>
