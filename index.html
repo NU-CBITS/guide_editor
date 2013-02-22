@@ -341,20 +341,7 @@ loadPage = function() {
     xelement_type: 'guide'
   });
 
-  onGuideSave = function(model, response, options) {
-    alert("Guide saved");
-    console.log("Guide Saved:", model, response, options);
-    guides_list.collection.add(CurrentGuide);
-    guides_list.render();
-  };
-
-  onFailedGuideSave = function(model, xhr, options) {
-      alert("There was an error saving the guide; please check the log;");
-      console.warn("could not save model:", model, xhr, options);
-  };
-
   guides_list.on("element:chosen", function() {
-
 
     //Clear cruft    
     $( "div#current-guide" ).empty();
@@ -369,19 +356,19 @@ loadPage = function() {
     };
 
     //Start handling newly chosen guide:
-
     CurrentGuide = guides_list.chosen_element;
 
-    //Save New Guides Immediately
+    //Save New Guides Immediately & Add them to the guides list.
     if (  CurrentGuide.isNew() && !_.contains(guides_list.collection, CurrentGuide) ) {
-      CurrentGuide.save(null, { success: onGuideSave, error:  onFailedGuideSave});
+      CurrentGuide.once("sync", function() {
+        guides_list.collection.add(CurrentGuide);
+        guides_list.render();
+      })
+      CurrentGuide.save();
     };
 
     //Initiate Interval Saving:
-    CurrentGuide.on('periodic_save:suggested', function() {
-      console.log("Saving due to periodic_save suggestion!");
-      CurrentGuide.save(null, { success: onGuideSave, error:  onFailedGuideSave});
-    });
+    CurrentGuide.on('periodic_save:suggested', CurrentGuide.save);
     CurrentGuide.startPeriodicSaving(5); //check to save every 5 seconds.
     CurrentGuide.on('change:title', guides_list.render);
 
