@@ -390,6 +390,14 @@ loadPage = function() {
 
     editGuideView.on("slide:chosen", function() {
 
+      //To ensure that content won't get lost on slide change:
+      if ( typeof(editSlideView) !== "undefined" && editSlideView && editSlideView.model) {
+        latestContent = $('textarea.slide-content:first').val();
+        if ( editSlideView.model.get_field_value("content") !==  latestContent ) {
+          editSlideView.updateContent( latestContent )
+        };
+      };
+      
       editSlideView = null;
       editSlideView = new Dynamo.EditSlideView({
         el: "div#current-slide",
