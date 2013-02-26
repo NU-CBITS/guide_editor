@@ -178,14 +178,15 @@
       <div class="on-slide-edit" style="<% if (!guide.guided_page_url) { %> display:none; <%} else { %> display:block; <% }; %>">
         <hr>
         <div id="slides"></div>
-        <hr>
-        <div id="last-save"></div>
-        <div class="save_status"></div>
-        <div class="btn-toolbar">
-          <button class="save btn btn-primary">Save Guide</button>
-          <button class="delete btn btn-danger "><i class="icon-trash"></i> Delete</button>
-        </div>
       </div>
+
+      <hr>
+      <div id="last-save"></div>
+      <div class="save_status"></div>
+      <div class="btn-toolbar">
+        <button class="save btn btn-primary">Save Guide</button>
+        <button class="delete btn btn-danger "><i class="icon-trash"></i> Delete</button>
+      </div>      
 
   </fieldset>
 </script>
@@ -206,9 +207,13 @@
 </script>
 
 <script id="edit-slide-template" type="text/underscore-template">
+  <div style="display:block;clear:auto;">
+    <span class="pull-right"><button class="btn btn-danger delete-slide">Delete Slide</button></span>
+  </div>
   <form>
     <div id="slide_attributes">
       <div>
+        <label for="<%= slide.cid %>-slide-title">Title</label>
         <input  id="<%= slide.cid %>-slide-title"
                 class="title input-large"
                 type="text"
@@ -341,6 +346,9 @@ loadPage = function() {
     xelement_type: 'guide'
   });
 
+  GUIDES.on("add", guides_list.render);
+  GUIDES.on("remove", guides_list.render);
+
   guides_list.on("element:chosen", function() {
 
     //Clear cruft    
@@ -355,10 +363,10 @@ loadPage = function() {
       CurrentGuide = null;  
     };
 
-    //Start handling newly chosen guide:
+    // Start handling newly chosen guide:
     CurrentGuide = guides_list.chosen_element;
 
-    //Save New Guides Immediately & Add them to the guides list.
+    // Save New Guides Immediately & Add them to the guides list.
     if (  CurrentGuide.isNew() && !_.contains(guides_list.collection, CurrentGuide) ) {
       CurrentGuide.once("sync", function() {
         guides_list.collection.add(CurrentGuide);
@@ -398,9 +406,12 @@ loadPage = function() {
         };
       };
       
-      editSlideView = null;
+      if (typeof(editSlideView) !== "undefined" && editSlideView && editSlideView.model) {
+        editSlideView.remove();
+        editSlideView = null;
+      }
+      
       editSlideView = new Dynamo.EditSlideView({
-        el: "div#current-slide",
         guidedPageSelector: editGuideView.options.iframe_selector,
         model: editGuideView.current_slide,
         actionTemplate: $('script#edit-action-template').html(),
@@ -413,6 +424,7 @@ loadPage = function() {
       });
 
 
+      $("div#current-slide").append(editSlideView.$el);
       editSlideView.render();
 
     });
