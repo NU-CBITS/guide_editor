@@ -42,7 +42,7 @@
 <script language="Javascript" src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
 <!-- <script language="Javascript" src="http://code.jquery.com/jquery-migrate-1.0.0.js"></script> -->
 <script language="Javascript" src="bootstrap/js/bootstrap.min.js"></script>
-<script language="Javascript" src="js/vendor/underscore-1.4.2.min.js"></script>
+<script language="Javascript" src="js/vendor/underscore-1.4.4.dev.js"></script>
 <script language="Javascript" src="js/vendor/backbone-0.9.9.dev.js"></script>
 <script language="Javascript" src="js/vendor/knockout-2.2.min.js"></script>
 
@@ -90,7 +90,7 @@ loadPage = function() {
     //Clear cruft    
     $( "div#current-guide" ).empty();
     $( "div#current-slide").empty();
-    $( "div#iframe-container").find("iframe:first").contents().empty();
+    $( "div#iframe-container").find("iframe#guided-page").contents().empty();
     if  ( !_.isUndefined(window.CurrentGuide) && 
           _.isObject(CurrentGuide) && 
           CurrentGuide.stopPeriodicSaving
@@ -210,8 +210,6 @@ $(window).load(function() {
         <div id="current-guide"></div>
       </div>
     </div>
-
-    <!-- <div id="iframe-container" style="padding:5px;margin:0 auto;text-align:center;width:300px;border:5px solid black;"> -->
     <div id="iframe-container" class="connect-modal">
       <iframe id="guided-page"></iframe>
     </div>
@@ -219,12 +217,6 @@ $(window).load(function() {
     <div class="clearfix"></div>
     <div id="available_elements"></div>
   </div>
-<!--   <h2 id="referred_page_title"></h2>
-  <iframe id="referred_page_preview">
-  </iframe>
-  <div id="edit_slide">
-  </div>
-  <div id="guide_slides_index">
-  </div> -->
+
 </body>
 </html>
