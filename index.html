@@ -90,6 +90,7 @@ loadPage = function() {
     //Clear cruft    
     $( "div#current-guide" ).empty();
     $( "div#current-slide").empty();
+    
     $( "div#iframe-container").find("iframe#guided-page").contents().empty();
     if  ( !_.isUndefined(window.CurrentGuide) && 
           _.isObject(CurrentGuide) && 
