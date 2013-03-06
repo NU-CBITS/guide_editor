@@ -112,9 +112,10 @@ loadPage = function() {
       CurrentGuide.save();
     };
 
-    //Initiate Interval Saving:
-    CurrentGuide.on('periodic_save:suggested', CurrentGuide.save);
-    CurrentGuide.startPeriodicSaving(5); //check to save every 5 seconds.
+    //Initiate Automatic Saving:
+    CurrentGuide.saveOnChange();
+    // CurrentGuide.on('periodic_save:suggested', CurrentGuide.save);
+    // CurrentGuide.startPeriodicSaving(5); //check to save every 5 seconds.
     CurrentGuide.on('change:title', guides_list.render);
 
     editGuideView = null;
