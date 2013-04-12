@@ -70,6 +70,94 @@
 <script type="text/javascript" language="javascript">
 
 Dynamo.AUTHENTICATING_USER_ID = function() { return "TEST-USER-GUID" };
+Dynamo.CurrentUser = function() { 
+  return (
+    new Dynamo.User({
+      guid: Config.CurrentUserGuid,
+      group_id: Config.CurrentGroupGuid,
+      username: Config.CurrentUsername
+    })
+  );
+};
+
+addGuideActionPluginToCKE = function() {
+
+  CKEDITOR.plugins.add( 'guide_action', {
+
+    // Register the icons.
+    icons: 'guide_action',
+
+    // The plugin initialization logic goes inside this method.
+    init: function( editor ) {
+
+      // Register our dialog file. this.path is the plugin folder path.
+      CKEDITOR.dialog.add( 'guideActionDialog', function( editor ) {
+          
+          return {
+              title: 'Create a Guide Action',
+              width:300,
+              height: 400,
+              minWidth: 300,
+              minHeight: 400,
+              contents: [
+                  {
+                      id: 'props',
+                      label: 'Button Properties',
+                      elements: [
+                          {
+                              id: 'button_text',
+                              label: 'Button Text',
+                              type: 'text',
+                              validate: CKEDITOR.dialog.validate.notEmpty( "Abbreviation field cannot be empty" )
+                          },
+                          {
+                              id: 'action',
+                              label: 'Button Action',
+                              type: 'select',
+                              options: ['blind', 'bounce', 'clip', 'drop', 'explode', 'fade', 'fold', 'highlight', 'puff', 'pulsate', 'scale', 'shake', 'size', 'slide', 'transfer' ],
+                          }
+                      ]
+                  }
+              ],
+              onOk: function() {
+                  var dialog = this;
+
+                  var button = editor.document.createElement('button', {
+                      id: _.uniqueId('action-'),
+                      class: "guide-action",
+                      "data-action": dialog.getValueOf( 'props', 'action' )
+                  });
+                  button.setText( dialog.getValueOf( 'props', 'button_text' ) );
+                  editor.insertElement( button );
+              }
+          };
+
+      }); // dialog.add
+
+      debugger;
+      // Define an editor command that opens our dialog.
+      editor.addCommand( 'guide_action', new CKEDITOR.dialogCommand( 'guideActionDialog' ) );
+
+      // Create a toolbar button that executes the above command.
+      editor.ui.addButton( 'GuideAction', {
+
+        // The text part of the button (if available) and tooptip.
+        label: 'Insert A Guide-Action Button',
+
+        // The command to execute on click.
+        command: 'guide_action',
+
+        // The button placement in the toolbar (toolbar group name).
+        toolbar: 'insert'
+      });
+
+      debugger;
+
+    } // init
+
+  }); // plugins.add
+
+}; //addGuideActionPluginToCKE
 
 loadPage = function() {
 
@@ -159,6 +247,8 @@ loadPage = function() {
         }),
         instantiateEditorFn: function(options, thisView) {
           var e;
+          addGuideActionPluginToCKE();
+          debugger;
           e = CKEDITOR.replace(options.selector, options.ckEditorConfig);
           e.on("instanceReady", function() {
             var bbView = thisView;
@@ -170,7 +260,9 @@ loadPage = function() {
         },
         instantiateEditorOptions: function() {
           return {
-            ckEditorConfig: {} 
+            ckEditorConfig: {
+              extraPlugins: 'oembed,guide_action'
+            } 
           }
         }
       });
@@ -195,7 +287,7 @@ $(window).load(function() {
   Dynamo.initialize();
   initializeLoadAndThen(loadPage);
   $("#iframe-container").hide();
-  $("#slide-container").draggable();
+  $("#slide-container").draggable({ handle: "div.drag-handle" });
 
 });
 
@@ -215,9 +307,14 @@ $(window).load(function() {
         <div id="guides_index" class="swell">
         </div>
         <hr>
-        <div id="slide-container" class="swell" style="z-index:999999;">
-          <h2 class="h2-move"><span class="h2-header">Current Slide</span><i class="icon-move pull-right" style="color:#666"></i></h2>
+        <div id="slide-container" class="swell" style="z-index:1000;">
+          <div class="drag-handle">
+          <h2 class="h2-move">
+            <span class="h2-header">Current Slide</span><i class="icon-move pull-right" style="color:#666"></i>
+          </h2>
+          </div>
           <div class="clearfix"></div>
+          <hr />
           <div id="current-slide"></div>
         </div>
       </div>
@@ -226,7 +323,7 @@ $(window).load(function() {
         <div id="current-guide"></div>
       </div>
     </div>
-    <div id="iframe-container" class="connect-modal">
+    <div id="iframe-container" class="connect-modal" style="z-index:999;">
       <iframe id="guided-page"></iframe>
     </div>
     <h2><span class="h2-header" id="elements_title"></span></h2>
