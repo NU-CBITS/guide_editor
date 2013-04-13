@@ -1,4 +1,4 @@
-CKEDITOR.dialog.add( 'guideActionDialog', function( editor ) {
+CKEDITOR.dialog.add('guideActionDialog', function( editor ) {
     return {
         title: 'Create a Guide Action',
         minWidth: 300,
@@ -15,10 +15,21 @@ CKEDITOR.dialog.add( 'guideActionDialog', function( editor ) {
                         validate: CKEDITOR.dialog.validate.notEmpty( "Abbreviation field cannot be empty" )
                     },
                     {
-                        id: 'action',
-                        label: 'Button Action',
+                        id: 'effect',
+                        label: 'Button Effect',
                         type: 'select',
-                        options: ['blind', 'bounce', 'clip', 'drop', 'explode', 'fade', 'fold', 'highlight', 'puff', 'pulsate', 'scale', 'shake', 'size', 'slide', 'transfer' ],
+                        items: [
+                            ['blind'], ['bounce'], ['clip'], ['drop'], ['explode'], 
+                            ['fade'], ['fold'], ['highlight'], ['puff'], ['pulsate'], 
+                            ['scale'], ['shake'], ['size'], ['slide'], ['transfer'] 
+                        ],
+                        default: 'pulsate'
+                    },
+                    {
+                        id: 'duration',
+                        label: 'Action Duration (in ms)',
+                        type: 'text',
+                        default: '400'
                     }
                 ]
             }
@@ -26,12 +37,18 @@ CKEDITOR.dialog.add( 'guideActionDialog', function( editor ) {
         onOk: function() {
             var dialog = this;
 
-            var button = editor.document.createElement( 'button' {
-                id: _.uniqueId('action-'),
+            var button = editor.document.createElement('button', {
                 class: "guide-action",
-                "data-action": dialog.getValueOf( 'props', 'action' )
+                "data-ckEditor_id": _.uniqueId("ck-"),
+                "data-effect": dialog.getValueOf( 'props', 'effect' ),
+                "data-duration": dialog.getValueOf( 'props', 'duration' )
             });
+            button.addClass("guide-action");
+            button.data("ckEditor_id", _.uniqueId("ck-"));
+            button.data("effect", dialog.getValueOf( 'props', 'effect' ) );
+            button.data("duration", dialog.getValueOf( 'props', 'duration' ) );
             button.setText( dialog.getValueOf( 'props', 'button_text' ) );
+
             editor.insertElement( button );
         }
     };
