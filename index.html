@@ -312,25 +312,29 @@ $(window).load(function() {
 <body>
   <div class="container-fluid" style="padding-top:20px;">
     <h1>Guide Editor</h1>
+
     <div class="row-fluid">
+
       <div class="span6">
-        <div id="guides_index" class="swell">
-        </div>
-        <hr>
-        <div id="slide-container" class="swell" style="z-index:1000;">
-          <div class="drag-handle">
-          <h2 class="h2-move">
-            <span class="h2-header">Current Slide</span><i class="icon-move pull-right" style="color:#666"></i>
-          </h2>
+        <div id="guides_index"></div>
+        <div id="slide-container" class="widget" style="z-index:1000;">
+          <div class="widget-header widget-header-default drag-handle">
+            <h3 class="h2-move" style="display: block;">
+              Current Slide
+              <i class="icon-move pull-right"></i>
+            </h3>
+            <div id="current-slide" class='widget-content'></div>
           </div>
-          <div class="clearfix"></div>
-          <hr />
-          <div id="current-slide"></div>
         </div>
       </div>
-      <div id="guide-container" class="span6 swell">
-        <h2><span class="h2-header">Current Guide</span></h2>
-        <div id="current-guide"></div>
+
+      <div class="span6">
+        <div id="guide-container" class="widget">
+        <div class="widget-header widget-header-default">
+          <h3>Current Guide</h3>
+        </div>
+        <div id="current-guide" class="widget-content"></div>
+        </div>
       </div>
     </div>
     <div id="iframe-container" class="connect-modal" style="z-index:999;">
