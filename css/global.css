@@ -1,6 +1,22 @@
 body {
   background: url('../img/container-bg.jpg') repeat;
 }
+.save_status.unsaved_changes {
+  /* label-warning */
+  background-color: #f89406;
+}
+.save_status.current {
+  /* label-success */
+  background-color: #468847;
+}
+/**/
+strong.lead {
+  /* wehrley */
+  font-weight: bold
+}
+.save_status {
+  margin-bottom: 9px;
+}
 .select-multiple label {
   margin-bottom:0px;
 }
