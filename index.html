@@ -23,7 +23,7 @@
   }
 
   div.collection_widget .elements div.action.element {
-/*    display:table-row;*/
+    /* display:table-row; */
   }
 
   div.collection_widget .elements div.edit_container div.action {
@@ -134,7 +134,6 @@ addGuideActionPluginToCKE = function() {
 
       }); // dialog.add
 
-      debugger;
       // Define an editor command that opens our dialog.
       editor.addCommand( 'guide_action', new CKEDITOR.dialogCommand( 'guideActionDialog' ) );
 
@@ -150,8 +149,6 @@ addGuideActionPluginToCKE = function() {
         // The button placement in the toolbar (toolbar group name).
         toolbar: 'insert'
       });
-
-      debugger;
 
     } // init
 
@@ -251,9 +248,10 @@ loadPage = function() {
           var e;
           e = CKEDITOR.replace(options.selector, options.ckEditorConfig);
           e.on("instanceReady", function() {
-            var bbView = thisView;
+            var theEditor = this,
+                bbView = thisView;
             bbView.recordSlideContent = function() {
-              bbView.updateContent( e.getData() );
+              bbView.updateContent( theEditor.getData() );
             }
             e.setData(bbView.model.get_field_value("content"));
             this.document.on("keyup", function() {
@@ -271,7 +269,7 @@ loadPage = function() {
         instantiateEditorOptions: function() {
           return {
             ckEditorConfig: {
-              extraPlugins: 'oembed'
+              extraPlugins: 'oembed,guide_action'
             } 
           }
         }
