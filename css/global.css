@@ -1,5 +1,6 @@
 body {
-  background: url('../img/container-bg.jpg') repeat;
+  /*background: url('../img/container-bg.jpg') repeat;*/
+  background-color:#f5f5f5;
 }
 .save_status.saving-changes {
   /* label-info */
