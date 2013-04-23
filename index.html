@@ -39,12 +39,12 @@
 
 <script type="text/javascript" src="config.js"></script>
 <script language="Javascript" src="js/vendor/state-machine.min.js"></script>
-<script language="Javascript" src="js/vendor/jquery-1.8.2.js"></script>
+<script language="Javascript" src="dynamo/vendor/jquery-1.9.1.min.js"></script>
 <script language="Javascript" src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
 <!-- <script language="Javascript" src="http://code.jquery.com/jquery-migrate-1.0.0.js"></script> -->
 <script language="Javascript" src="bootstrap/js/bootstrap.min.js"></script>
 <script language="Javascript" src="js/vendor/underscore-1.4.4.dev.js"></script>
-<script language="Javascript" src="js/vendor/backbone-0.9.9.dev.js"></script>
+<script language="Javascript" src="dynamo/vendor/backbone-1.0.0.min.js"></script>
 <script language="Javascript" src="js/vendor/knockout-2.2.min.js"></script>
 
 <script language="Javascript" src="wysihtml5/parser_rules/advanced.js"></script>
@@ -219,25 +219,23 @@ loadPage = function() {
 
     editGuideView.on("slide:chosen", function() {
 
-      //To ensure that content won't get lost on slide change:
-      //causing bug?
+      // To ensure that content won't get lost on slide change:
+      // causing bug?
       if (  (typeof(editSlideView) !== "undefined") && 
             editSlideView &&
             (editSlideView.$el.find('textarea.slide-content:first').length > 0)//if an element currently exists
           ) {
-        
         editSlideView.recordSlideContent();
-      }
+      };
       
       if (typeof(editSlideView) !== "undefined" && editSlideView && editSlideView.model) {
         editSlideView.remove();
         editSlideView = null;
-      }
+      };
       
       editSlideView = new Dynamo.EditSlideView({
         guidedPageSelector: editGuideView.options.iframe_selector,
         model: editGuideView.current_slide,
-        actionTemplate: DIT["dynamo/guides/slides/actions/edit"],
         actionTargets: _.map(editGuideView.usableElements, function(el) {
           var r = el.tagName; 
           if (el.idName) { r = r+"#"+el.idName };
