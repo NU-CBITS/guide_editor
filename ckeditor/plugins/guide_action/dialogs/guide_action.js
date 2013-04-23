@@ -9,7 +9,7 @@ CKEDITOR.dialog.add('guideActionDialog', function( editor ) {
                 label: 'Button Properties',
                 elements: [
                     {
-                        id: 'button_text',
+                        id: 'label',
                         label: 'Button Text',
                         type: 'text',
                         validate: CKEDITOR.dialog.validate.notEmpty( "Abbreviation field cannot be empty" )
@@ -40,14 +40,16 @@ CKEDITOR.dialog.add('guideActionDialog', function( editor ) {
             var button = editor.document.createElement('button', {
                 class: "guide-action",
                 "data-ckEditor_id": _.uniqueId("ck-"),
+                "data-label" : dialog.getValueOf( 'props', 'label' ),
                 "data-effect": dialog.getValueOf( 'props', 'effect' ),
                 "data-duration": dialog.getValueOf( 'props', 'duration' )
             });
             button.addClass("guide-action");
+            button.data("label", dialog.getValueOf( 'props', 'label' ));
             button.data("ckEditor_id", _.uniqueId("ck-"));
             button.data("effect", dialog.getValueOf( 'props', 'effect' ) );
             button.data("duration", dialog.getValueOf( 'props', 'duration' ) );
-            button.setText( dialog.getValueOf( 'props', 'button_text' ) );
+            button.setText( dialog.getValueOf( 'props', 'label' ) );
 
             editor.insertElement( button );
         }
