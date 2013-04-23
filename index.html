@@ -295,7 +295,7 @@ $(window).load(function() {
   Dynamo.initialize();
   initializeLoadAndThen(loadPage);
   $("#iframe-container").hide();
-  $("#slide-container").draggable({ handle: "div.drag-handle" });
+  $("#slide-container").draggable({ handle: "h3.drag-handle" });
 
 });
 
@@ -316,8 +316,8 @@ $(window).load(function() {
       <div class="span6">
         <div id="guides_index"></div>
         <div id="slide-container" class="widget" style="z-index:1000;">
-          <div class="widget-header widget-header-default drag-handle">
-            <h3 class="h2-move" style="display: block;">
+          <div class="widget-header widget-header-default">
+            <h3 class="h2-move drag-handle" style="display: block;">
               Current Slide
               <i class="icon-move pull-right"></i>
             </h3>
