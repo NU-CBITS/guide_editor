@@ -16,7 +16,7 @@ CKEDITOR.editorConfig = function( config ) {
 		{ name: 'insert' },
 		{ name: 'forms' },
 		{ name: 'tools' },
-		{ name: 'document',	   groups: [ 'mode', 'document', 'doctools' ] },
+		{ name: 'document',	   groups: [ 'mode', 'document', 'doctools', 'font' ] },
 		{ name: 'others' },
 		'/',
 		{ name: 'basicstyles', groups: [ 'basicstyles', 'cleanup' ] },
@@ -28,7 +28,7 @@ CKEDITOR.editorConfig = function( config ) {
 	];
 
 	//configuration for oembed plugin
-	config.extraPlugins = 'oembed';
+	config.extraPlugins = 'oembed,font';
 	config.allowedContent = true;
 	config.oembed_WrapperClass = 'embeded-content';
 
