@@ -1,5 +1,3 @@
-// site-wide-stuff.js
-
 
 setSiteWideStuff = function() {
 

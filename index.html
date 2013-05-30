@@ -40,7 +40,6 @@
 <script language="Javascript" src="js/vendor/state-machine.min.js"></script>
 <script language="Javascript" src="dynamo/vendor/jquery-1.9.1.min.js"></script>
 <script language="Javascript" src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
-<!-- <script language="Javascript" src="http://code.jquery.com/jquery-migrate-1.0.0.js"></script> -->
 <script language="Javascript" src="bootstrap/js/bootstrap.min.js"></script>
 <script language="Javascript" src="js/vendor/underscore-1.4.4.dev.js"></script>
 <script language="Javascript" src="dynamo/vendor/backbone-1.0.0.min.js"></script>
@@ -209,7 +208,7 @@ loadPage = function() {
     });
     
     //render current guide
-    $( "div#current-guide" ).append(editGuideView.render().render().$el);
+    $( "div#current-guide" ).append(editGuideView.render().$el);
 
   });
 
@@ -218,6 +217,10 @@ loadPage = function() {
   $( "div#guides_index div.widget-header:first").on("click", function() {
     $( "div#guides_index div.widget-content:first").toggle();
   });
+
+  $( "div#guide-container div.widget-header:first").on("click", function() {
+    $( "div#guide-container div.widget-content:first").toggle();
+  });  
 
 };
 
