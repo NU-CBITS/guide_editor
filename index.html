@@ -53,7 +53,7 @@
 <script language="Javascript" src="dynamo/vendor/tee.js"></script>
 <script language="Javascript" src="ckeditor/ckeditor.js"></script>
 
-<script type="text/javascript" src="dynamo/templates.js"></script>
+<script type="text/javascript" src="dynamo/_templates.js"></script>
 <script type="text/javascript" src="dynamo/Core.js"></script>
 <script type="text/javascript"> Dynamo.TriremeURL = Config.TriremeURL; </script>
 <script type="text/javascript" src="dynamo/Core.Models.js"></script>
@@ -82,10 +82,13 @@ Dynamo.CurrentUser = function() {
 
 loadPage = function() {
 
+  GUIDES.each(function(m) { m.guide_description = m.get_field_value("content_description") });
+
   guides_list = new Dynamo.ChooseOneXelementFromCollectionView({
     el: "div#guides_index",
     collection: GUIDES,
     canCreateNew: true,
+    groupBy: "guide_description",
     xelement_type: 'guide'
   });
 
@@ -94,13 +97,15 @@ loadPage = function() {
 
   guides_list.on("element:chosen", function() {
 
-    //Clear cruft    
-    $( "div#current-guide" ).empty();
-    $( "div#current-slide").empty();
-    
-    $( "div#iframe-container").find("iframe#guided-page").contents().empty();
-    if  ( !_.isUndefined(window.CurrentGuide) && 
-          _.isObject(CurrentGuide) && 
+    // Close Guides List
+    $( "div#guides_index div.widget-content:first").hide();
+
+    // Clear cruft
+    $("div#current-guide").empty();
+    $("div#current-slide").empty();
+    $("iframe#guided-page").contents().empty();
+    if (  !_.isUndefined(window.CurrentGuide) && 
+          _.isObject(CurrentGuide)            && 
           CurrentGuide.stopPeriodicSaving
         ) {
       CurrentGuide.stopPeriodicSaving();
@@ -203,12 +208,16 @@ loadPage = function() {
 
     });
     
-    $( "div#current-guide" ).append(editGuideView.render().$el);
+    //render current guide
+    $( "div#current-guide" ).append(editGuideView.render().render().$el);
 
   });
 
 
   guides_list.render();
+  $( "div#guides_index div.widget-header:first").on("click", function() {
+    $( "div#guides_index div.widget-content:first").toggle();
+  });
 
 };
 
@@ -237,6 +246,15 @@ $(window).load(function() {
 
       <div class="span6">
         <div id="guides_index"></div>
+        <div id="guide-container" class="widget">
+        <div class="widget-header widget-header-default">
+          <h3>Current Guide</h3>
+        </div>
+        <div id="current-guide" class="widget-content"></div>
+        </div>
+      </div>
+
+      <div class="span6">
         <div id="slide-container" class="widget" style="z-index:1000;">
           <div class="widget-header widget-header-default">
             <h3 class="h2-move drag-handle" style="display: block;">
@@ -245,15 +263,6 @@ $(window).load(function() {
             </h3>
             <div id="current-slide" class='widget-content'></div>
           </div>
-        </div>
-      </div>
-
-      <div class="span6">
-        <div id="guide-container" class="widget">
-        <div class="widget-header widget-header-default">
-          <h3>Current Guide</h3>
-        </div>
-        <div id="current-guide" class="widget-content"></div>
         </div>
       </div>
     </div>
