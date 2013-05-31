@@ -41,7 +41,7 @@
 <script language="Javascript" src="dynamo/vendor/jquery-1.9.1.min.js"></script>
 <script language="Javascript" src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
 <script language="Javascript" src="bootstrap/js/bootstrap.min.js"></script>
-<script language="Javascript" src="js/vendor/underscore-1.4.4.dev.js"></script>
+<script language="Javascript" src="dynamo/vendor/lodash-1.2.1.dev.js"></script>
 <script language="Javascript" src="dynamo/vendor/backbone-1.0.0.min.js"></script>
 <script language="Javascript" src="js/vendor/knockout-2.2.min.js"></script>
 
@@ -63,7 +63,7 @@
 
 <script type="text/javascript" src="dynamo/Guides.Models.js"></script>
 <script type="text/javascript" src="dynamo/Guides.Collections.js"></script>
-<script type="text/javascript" src="dynamo/Guides.Views.js"></script>
+<script type="text/javascript" src="dynamo/Guides.Views.js?update=1"></script>
 <script type="text/javascript" src="js/initial_load.js"></script>
 
 <script type="text/javascript" language="javascript">
@@ -171,15 +171,73 @@ loadPage = function() {
           return r;
         }),
         instantiateEditorFn: function(options, thisView) {
-          var e;
-          e = CKEDITOR.replace(options.selector, options.ckEditorConfig);
-          e.on("instanceReady", function() {
+          var ckInstance;
+          options = options;
+          thisView = thisView;
+          
+
+          for(name in CKEDITOR.instances) {
+            // delete(CKEDITOR.instances[name]);
+            try {
+              var ed = CKEDITOR.instances[name];
+              ed.destroy(true);  
+            }
+            catch (e1) {
+              console.warn("error trying to properly delete ckeditor instance: '"+name+"'");
+              try {
+                delete(CKEDITOR.instances[name]);
+              }
+              catch(e2) {
+                console.warn("error trying to workaround for deleting ckeditor instance: '"+name+"'");
+              }
+            }
+          };
+          // delete(thisView.editor);
+
+
+          try {
+            ckInstance = CKEDITOR.replace(options.selector, options.ckEditorConfig);
+          }
+          catch (e1) {
+
+            console.warn("re-injecting CKEDITOR b/c of ugly CKEditor bug");
+
+            CKEDITOR = null;
+            
+            var scriptNode = document.createElement('script');
+            scriptNode.type = 'text/javascript';
+            scriptNode.async = false;
+            scriptNode.src = ("ckeditor/ckeditor.js"+"?update="+(Math.floor(Math.random()*1001)) );
+            
+            var headNode = document.getElementsByTagName('HEAD');
+            if (headNode[0] != null) {
+              headNode[0].appendChild(scriptNode);      
+              console.log("trying again...");
+            };
+
+            var i=0;
+            while ( !ckInstance && ((++i) < 10) ) {
+              
+              try {
+                ckInstance = CKEDITOR.replace(options.selector, options.ckEditorConfig);
+              }  
+              catch (e) {
+                console.warn("instantiating ckeditor failed...");
+              };
+            };
+            //last resort
+            if (i === 10) { window.location.reload() }
+            
+          };
+
+          ckInstance.on("instanceReady", function() {
             var theEditor = this,
                 bbView = thisView;
+            this.resize( '100%', '550' );
             bbView.recordSlideContent = function() {
               bbView.updateContent( theEditor.getData() );
             }
-            e.setData(bbView.model.get_field_value("content"));
+            this.setData(bbView.model.get_field_value("content"));
             this.document.on("keyup", function() {
               bbView.recordSlideContent()
             });
@@ -190,7 +248,9 @@ loadPage = function() {
               bbView.recordSlideContent()
             });            
           });
-          return e;
+
+          return ckInstance;
+
         },
         instantiateEditorOptions: function() {
           return {
