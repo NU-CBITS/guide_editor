@@ -1,0 +1,341 @@
+<html>
+<head>
+<title>Guide Editor</title>
+
+<!-- <link rel="stylesheet" href="css/jquery-ui.css" /> -->
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.0/themes/base/jquery-ui.css" />
+<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" href="bootstrap/css/bootstrap-responsive.min.css" />
+<link rel="stylesheet" href="font_awesome/css/font-awesome.css">
+<link rel="stylesheet" href="css/global.css" />
+
+<style type="text/css">
+  input#private_url { width: 80%; }
+
+  .choose_element:hover { 
+    cursor: hand; 
+    cursor: pointer; 
+  }
+
+  div.collection_widget .elements {
+    display:table;
+    width:100%;
+  }
+
+  div.collection_widget .elements div.action.element {
+    /* display:table-row; */
+  }
+
+  div.collection_widget .elements div.edit_container div.action {
+    display:table-row;
+  }
+
+  div.collection_widget div.elements div.edit_container div.action span.cell{
+    display:table-cell;
+    margin:0 auto;
+  }
+</style>
+
+<script type="text/javascript" src="config.js"></script>
+<script language="Javascript" src="js/vendor/state-machine.min.js"></script>
+<script language="Javascript" src="dynamo/vendor/jquery-1.9.1.min.js"></script>
+<script language="Javascript" src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
+<script language="Javascript" src="bootstrap/js/bootstrap.min.js"></script>
+<script language="Javascript" src="dynamo/vendor/lodash-1.2.1.dev.js"></script>
+<script language="Javascript" src="dynamo/vendor/backbone-1.0.0.min.js"></script>
+<script language="Javascript" src="js/vendor/knockout-2.2.min.js"></script>
+
+<script language="Javascript" src="wysihtml5/parser_rules/advanced.js"></script>
+<script language="Javascript" src="wysihtml5/dist/wysihtml5-0.3.0.min.js"></script>
+
+
+<script language="Javascript" src="dynamo/vendor/tee.js"></script>
+<script language="Javascript" src="ckeditor/ckeditor.js"></script>
+
+<script type="text/javascript" src="dynamo/_templates.js"></script>
+<script type="text/javascript" src="dynamo/Core.js"></script>
+<script type="text/javascript"> Dynamo.TriremeURL = Config.TriremeURL; </script>
+<script type="text/javascript" src="dynamo/Core.Models.js"></script>
+<script type="text/javascript"> Dynamo.XelementClass = eval(Config.DynamoXelementClass); </script>
+<script type="text/javascript" src="dynamo/Core.Collections.js"></script>
+<script type="text/javascript" src="dynamo/Core.Views.js"></script>
+
+
+<script type="text/javascript" src="dynamo/Guides.Models.js"></script>
+<script type="text/javascript" src="dynamo/Guides.Collections.js"></script>
+<script type="text/javascript" src="dynamo/Guides.Views.js?update=1"></script>
+<script type="text/javascript" src="js/initial_load.js"></script>
+
+<script type="text/javascript" language="javascript">
+
+Dynamo.AUTHENTICATING_USER_ID = function() { return "TEST-USER-GUID" };
+Dynamo.CurrentUser = function() { 
+  return (
+    new Dynamo.User({
+      guid: Config.CurrentUserGuid,
+      group_id: Config.CurrentGroupGuid,
+      username: Config.CurrentUsername
+    })
+  );
+};
+
+loadPage = function() {
+
+  GUIDES.each(function(m) { m.guide_description = m.get_field_value("content_description") });
+
+  guides_list = new Dynamo.ChooseOneXelementFromCollectionView({
+    el: "div#guides_index",
+    collection: GUIDES,
+    canCreateNew: true,
+    groupBy: "guide_description",
+    xelement_type: 'guide'
+  });
+
+  GUIDES.on("add", guides_list.render);
+  GUIDES.on("remove", guides_list.render);
+
+  guides_list.on("element:chosen", function() {
+
+    // Close Guides List
+    $( "div#guides_index div.widget-content:first").hide();
+
+    // Clear cruft
+    $("div#current-guide").empty();
+    $("div#current-slide").empty();
+    $("iframe#guided-page").contents().empty();
+    if (  !_.isUndefined(window.CurrentGuide) && 
+          _.isObject(CurrentGuide)            && 
+          CurrentGuide.stopPeriodicSaving
+        ) {
+      CurrentGuide.stopPeriodicSaving();
+      CurrentGuide = null;  
+    };
+
+    // Start handling newly chosen guide:
+    CurrentGuide = guides_list.chosen_element;
+
+    // Save New Guides Immediately & Add them to the guides list.
+    if (  CurrentGuide.isNew() && !_.contains(guides_list.collection, CurrentGuide) ) {
+      CurrentGuide.once("sync", function() {
+        guides_list.collection.add(CurrentGuide);
+        guides_list.render();
+      })
+      CurrentGuide.save();
+    };
+
+    // Initiate Automatic Saving:
+    CurrentGuide.saveOnChange();
+    // CurrentGuide.on('periodic_save:suggested', CurrentGuide.save);
+    // CurrentGuide.startPeriodicSaving(5); //check to save every 5 seconds.
+    CurrentGuide.on('change:title', guides_list.render);
+
+    editGuideView = null;
+    editGuideView = new Dynamo.EditGuideView({
+      model: CurrentGuide,
+      iframe_selector: "iframe#guided-page"
+    });
+
+    editGuideView.on("guided_page:loaded", function() {
+      $( "div#iframe-container").resizable({ alsoResize: "iframe#guided-page" });
+      _.each(editGuideView.usableElements, function(el, i) {
+        if ( typeof(editSlideView) !== "undefined" && editSlideView.options) {
+          editSlideView.options.actionTargets = editGuideView.usableElements;
+          editSlideView.render();
+        };
+      });
+    });
+
+    editGuideView.on("slide:chosen", function() {
+
+      // To ensure that content won't get lost on slide change:
+      // causing bug?
+      if (  (typeof(editSlideView) !== "undefined") && 
+            editSlideView &&
+            (editSlideView.$el.find('textarea.slide-content:first').length > 0)//if an element currently exists
+          ) {
+        editSlideView.recordSlideContent();
+      };
+      
+      if (typeof(editSlideView) !== "undefined" && editSlideView && editSlideView.model) {
+        editSlideView.remove();
+        editSlideView = null;
+      };
+      
+      editSlideView = new Dynamo.EditSlideView({
+        guidedPageSelector: editGuideView.options.iframe_selector,
+        model: editGuideView.current_slide,
+        actionTargets: _.map(editGuideView.usableElements, function(el) {
+          var r = el.tagName; 
+          if (el.idName) { r = r+"#"+el.idName };
+          if (el.className) { r = r+"."+(el.className.split(' ')).join('.') };
+          return r;
+        }),
+        instantiateEditorFn: function(options, thisView) {
+          var ckInstance;
+          options = options;
+          thisView = thisView;
+          
+
+          for(name in CKEDITOR.instances) {
+            // delete(CKEDITOR.instances[name]);
+            try {
+              var ed = CKEDITOR.instances[name];
+              ed.destroy(true);  
+            }
+            catch (e1) {
+              console.warn("error trying to properly delete ckeditor instance: '"+name+"'");
+              try {
+                delete(CKEDITOR.instances[name]);
+              }
+              catch(e2) {
+                console.warn("error trying to workaround for deleting ckeditor instance: '"+name+"'");
+              }
+            }
+          };
+          // delete(thisView.editor);
+
+
+          try {
+            ckInstance = CKEDITOR.replace(options.selector, options.ckEditorConfig);
+          }
+          catch (e1) {
+
+            console.warn("re-injecting CKEDITOR b/c of ugly CKEditor bug");
+
+            CKEDITOR = null;
+            
+            var scriptNode = document.createElement('script');
+            scriptNode.type = 'text/javascript';
+            scriptNode.async = false;
+            scriptNode.src = ("ckeditor/ckeditor.js"+"?update="+(Math.floor(Math.random()*1001)) );
+            
+            var headNode = document.getElementsByTagName('HEAD');
+            if (headNode[0] != null) {
+              headNode[0].appendChild(scriptNode);      
+              console.log("trying again...");
+            };
+
+            var i=0;
+            while ( !ckInstance && ((++i) < 10) ) {
+              
+              try {
+                ckInstance = CKEDITOR.replace(options.selector, options.ckEditorConfig);
+              }  
+              catch (e) {
+                console.warn("instantiating ckeditor failed...");
+              };
+            };
+            //last resort
+            if (i === 10) { window.location.reload() }
+            
+          };
+
+          ckInstance.on("instanceReady", function() {
+            var theEditor = this,
+                bbView = thisView;
+            this.resize( '100%', '550' );
+            bbView.recordSlideContent = function() {
+              bbView.updateContent( theEditor.getData() );
+            }
+            this.setData(bbView.model.get_field_value("content"));
+            this.document.on("keyup", function() {
+              bbView.recordSlideContent()
+            });
+            this.document.on("mouseup", function() {
+              bbView.recordSlideContent()
+            });
+            this.document.on("change", function() {
+              bbView.recordSlideContent()
+            });            
+          });
+
+          return ckInstance;
+
+        },
+        instantiateEditorOptions: function() {
+          return {
+            ckEditorConfig: {
+              extraPlugins: 'oembed,guide_action,font'
+            } 
+          }
+        }
+      });
+
+
+      $("div#current-slide").append(editSlideView.$el);
+      editSlideView.render();
+
+    });
+    
+    //render current guide
+    $( "div#current-guide" ).append(editGuideView.render().$el);
+
+  });
+
+
+  guides_list.render();
+  $( "div#guides_index div.widget-header:first").on("click", function() {
+    $( "div#guides_index div.widget-content:first").toggle();
+  });
+
+  $( "div#guide-container div.widget-header:first").on("click", function() {
+    $( "div#guide-container div.widget-content:first").toggle();
+  });  
+
+};
+
+$(window).load(function() {
+  
+  Dynamo.initialize();
+  initializeLoadAndThen(loadPage);
+  $("#iframe-container").hide();
+  $("#slide-container").draggable({ handle: "h3.drag-handle" });
+
+});
+
+// Load guides from Mongo;
+// New guide form allows import from Google Doc.
+// Selecting a guide loads it in the editor.
+// Referrent Page loads in the Iframe;
+// - Page title
+
+</script>
+</head>
+<body>
+  <div class="container-fluid" style="padding-top:20px;">
+    <h1>Guide Editor</h1>
+
+    <div class="row-fluid">
+
+      <div class="span6">
+        <div id="guides_index"></div>
+        <div id="guide-container" class="widget">
+        <div class="widget-header widget-header-default">
+          <h3>Current Guide</h3>
+        </div>
+        <div id="current-guide" class="widget-content"></div>
+        </div>
+      </div>
+
+      <div class="span6">
+        <div id="slide-container" class="widget" style="z-index:1000;">
+          <div class="widget-header widget-header-default">
+            <h3 class="h2-move drag-handle" style="display: block;">
+              Current Slide
+              <i class="icon-move pull-right"></i>
+            </h3>
+            <div id="current-slide" class='widget-content'></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div id="iframe-container" class="connect-modal" style="z-index:999;">
+      <iframe id="guided-page"></iframe>
+    </div>
+    <h2><span class="h2-header" id="elements_title"></span></h2>
+    <div class="clearfix"></div>
+    <div id="available_elements"></div>
+  </div>
+
+</body>
+</html>

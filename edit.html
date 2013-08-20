@@ -1,0 +1,368 @@
+<html>
+<head>
+<title>Editing Guide</title>
+
+<!-- <link rel="stylesheet" href="css/jquery-ui.css" /> -->
+<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.0/themes/base/jquery-ui.css" />
+<link rel="stylesheet" href="bootstrap/css/bootstrap.min.css" />
+<link rel="stylesheet" href="bootstrap/css/bootstrap-responsive.min.css" />
+<link rel="stylesheet" href="font_awesome/css/font-awesome.css">
+<link rel="stylesheet" href="css/global.css" />
+
+<style type="text/css">
+  input#private_url { width: 80%; }
+
+  .choose_element:hover { 
+    cursor: hand; 
+    cursor: pointer; 
+  }
+
+  div.collection_widget .elements {
+    display:table;
+    width:100%;
+  }
+
+  div.collection_widget .elements div.action.element {
+    /* display:table-row; */
+  }
+
+  div.collection_widget .elements div.edit_container div.action {
+    display:table-row;
+  }
+
+  div.collection_widget div.elements div.edit_container div.action span.cell{
+    display:table-cell;
+    margin:0 auto;
+  }
+</style>
+
+<script type="text/javascript" src="config.js"></script>
+<script language="Javascript" src="js/vendor/state-machine.min.js"></script>
+<script language="Javascript" src="dynamo/vendor/jquery-1.9.1.min.js"></script>
+<script language="Javascript" src="http://code.jquery.com/ui/1.10.0/jquery-ui.js"></script>
+<script language="Javascript" src="bootstrap/js/bootstrap.min.js"></script>
+<script language="Javascript" src="dynamo/vendor/lodash-1.2.1.dev.js"></script>
+<script language="Javascript" src="dynamo/vendor/backbone-1.0.0.min.js"></script>
+<script language="Javascript" src="js/vendor/knockout-2.2.min.js"></script>
+
+<script language="Javascript" src="wysihtml5/parser_rules/advanced.js"></script>
+<script language="Javascript" src="wysihtml5/dist/wysihtml5-0.3.0.min.js"></script>
+
+
+<script language="Javascript" src="dynamo/vendor/tee.js"></script>
+<script language="Javascript" src="ckeditor/ckeditor.js"></script>
+
+<script type="text/javascript" src="dynamo/_templates.js"></script>
+<script type="text/javascript" src="dynamo/Core.js"></script>
+<script type="text/javascript"> Dynamo.TriremeURL = Config.TriremeURL; </script>
+<script type="text/javascript" src="dynamo/Core.Models.js"></script>
+<script type="text/javascript"> Dynamo.XelementClass = eval(Config.DynamoXelementClass); </script>
+<script type="text/javascript" src="dynamo/Core.Collections.js"></script>
+<script type="text/javascript" src="dynamo/Core.Views.js"></script>
+
+
+<script type="text/javascript" src="dynamo/Guides.Models.js"></script>
+<script type="text/javascript" src="dynamo/Guides.Collections.js"></script>
+<script type="text/javascript" src="dynamo/Guides.Views.js?update=1"></script>
+
+<script type="text/javascript" language="javascript">
+
+Dynamo.AUTHENTICATING_USER_ID = function() { return "TEST-USER-GUID" };
+Dynamo.CurrentUser = function() { 
+  return (
+    new Dynamo.User({
+      guid: Config.CurrentUserGuid,
+      group_id: Config.CurrentGroupGuid,
+      username: Config.CurrentUsername
+    })
+  );
+};
+
+function getParameterByName(name) {
+    name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results == null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
+
+loadGuideAndSlides = function(callback) {
+
+  Dynamo.CURRENT_USER_ID = 'TEST-USER-GUID';
+  var guideId = getParameterByName("guide");
+
+  xel_base_request = 
+    $.get( Dynamo.addSessionVarsToUrl(Dynamo.TriremeURL+'/xelements/xelement_base') );
+
+  if (guideId && (guideId !== "newGuide")) {
+
+    slides_request = 
+      $.get( Dynamo.addSessionVarsToUrl(Dynamo.TriremeURL+'/xelement_type/static_html') );
+
+    guide_request = 
+      $.get( Dynamo.addSessionVarsToUrl(Dynamo.TriremeURL+'/xelements/'+guideId) );    
+
+    $.when( xel_base_request ).done(function() {
+
+      XELEMENT_BASE = new Backbone.Model(convertFalses(JSON.parse(JSON.parse(xel_base_request.responseText).xel_data_values.content)));
+
+      $.when( slides_request ).done(function() {
+
+        var slides_json = convertFalses(JSON.parse(slides_request.responseText));
+        SLIDES = new SlideCollection(slides_json);   
+      
+        $.when( guide_request ).done(function() {
+
+          guide_json = convertFalses(JSON.parse(guide_request.responseText));
+          guide_json.xel_data_types = JSONparseNested(guide_json.xel_data_types);
+          guide_json.xel_data_values = JSONparseNested(guide_json.xel_data_values);
+          guide_json.xel_data_values.required_xelement_ids = JSON.parse(guide_json.xel_data_values.required_xelement_ids);
+          CurrentGuide = new GuideModel(guide_json);
+
+          callback();
+        });
+
+      }); 
+
+    });
+
+
+  } 
+  else {
+
+    //new Guide
+
+    $.when( xel_base_request ).done(function() {
+
+      XELEMENT_BASE = new Backbone.Model(convertFalses(JSON.parse(JSON.parse(xel_base_request.responseText).xel_data_values.content)));
+
+      SLIDES = new SlideCollection();
+      
+      CurrentGuide = new GuideModel();
+
+      callback();
+
+    });
+
+  }
+
+};
+
+loadPage = function() {
+
+  // $("iframe#guided-page").contents().empty();
+
+    // Save New Guides Immediately & Add them to the guides list.
+    if (  CurrentGuide.isNew() ) {
+      CurrentGuide.save(null, {async: false});
+    };
+
+    // Initiate Automatic Saving:
+    CurrentGuide.saveOnChange();
+
+    editGuideView = null;
+    editGuideView = new Dynamo.EditGuideView({
+      model: CurrentGuide,
+      iframe_selector: "iframe#guided-page"
+    });
+
+    editGuideView.on("guided_page:loaded", function() {
+      $( "div#iframe-container").resizable({ alsoResize: "iframe#guided-page" });
+      _.each(editGuideView.usableElements, function(el, i) {
+        if ( typeof(editSlideView) !== "undefined" && editSlideView.options) {
+          editSlideView.options.actionTargets = editGuideView.usableElements;
+          editSlideView.render();
+        };
+      });
+    });
+
+    editGuideView.on("slide:chosen", function() {
+
+      // To ensure that content won't get lost on slide change:
+      // causing bug?
+      if (  (typeof(editSlideView) !== "undefined") && 
+            editSlideView &&
+            (editSlideView.$el.find('textarea.slide-content:first').length > 0)//if an element currently exists
+          ) {
+        editSlideView.recordSlideContent();
+      };
+      
+      if (typeof(editSlideView) !== "undefined" && editSlideView && editSlideView.model) {
+        editSlideView.remove();
+        editSlideView = null;
+      };
+      
+      editSlideView = new Dynamo.EditSlideView({
+        guidedPageSelector: editGuideView.options.iframe_selector,
+        model: editGuideView.current_slide,
+        actionTargets: _.map(editGuideView.usableElements, function(el) {
+          var r = el.tagName; 
+          if (el.idName) { r = r+"#"+el.idName };
+          if (el.className) { r = r+"."+(el.className.split(' ')).join('.') };
+          return r;
+        }),
+        instantiateEditorFn: function(options, thisView) {
+          var ckInstance;
+          options = options;
+          thisView = thisView;
+          
+
+          for(name in CKEDITOR.instances) {
+            // delete(CKEDITOR.instances[name]);
+            try {
+              var ed = CKEDITOR.instances[name];
+              ed.destroy(true);  
+            }
+            catch (e1) {
+              console.warn("error trying to properly delete ckeditor instance: '"+name+"'");
+              try {
+                delete(CKEDITOR.instances[name]);
+              }
+              catch(e2) {
+                console.warn("error trying to workaround for deleting ckeditor instance: '"+name+"'");
+              }
+            }
+          };
+          // delete(thisView.editor);
+
+
+          try {
+            ckInstance = CKEDITOR.replace(options.selector, options.ckEditorConfig);
+          }
+          catch (e1) {
+
+            console.warn("re-injecting CKEDITOR b/c of ugly CKEditor bug");
+
+            CKEDITOR = null;
+            
+            var scriptNode = document.createElement('script');
+            scriptNode.type = 'text/javascript';
+            scriptNode.async = false;
+            scriptNode.src = ("ckeditor/ckeditor.js"+"?update="+(Math.floor(Math.random()*1001)) );
+            
+            var headNode = document.getElementsByTagName('HEAD');
+            if (headNode[0] != null) {
+              headNode[0].appendChild(scriptNode);      
+              console.log("trying again...");
+            };
+
+            var i=0;
+            while ( !ckInstance && ((++i) < 10) ) {
+              
+              try {
+                ckInstance = CKEDITOR.replace(options.selector, options.ckEditorConfig);
+              }  
+              catch (e) {
+                console.warn("instantiating ckeditor failed...");
+              };
+            };
+            //last resort
+            if (i === 10) { window.location.reload() }
+            
+          };
+
+          ckInstance.on("instanceReady", function() {
+            var theEditor = this,
+                bbView = thisView;
+            this.resize( '100%', '550' );
+            bbView.recordSlideContent = function() {
+              bbView.updateContent( theEditor.getData() );
+            }
+            this.setData(bbView.model.get_field_value("content"));
+            this.document.on("keyup", function() {
+              bbView.recordSlideContent()
+            });
+            this.document.on("mouseup", function() {
+              bbView.recordSlideContent()
+            });
+            this.document.on("change", function() {
+              bbView.recordSlideContent()
+            });            
+          });
+
+          return ckInstance;
+
+        },
+        instantiateEditorOptions: function() {
+          return {
+            ckEditorConfig: {
+              extraPlugins: 'oembed,guide_action,font'
+            } 
+          }
+        }
+      });
+
+
+      $("div#current-slide").append(editSlideView.$el);
+      editSlideView.render();
+
+    });
+    
+    //render current guide
+    $( "div#current-guide" ).append(editGuideView.render().$el);
+
+
+  $( "div#guide-container div.widget-header:first").on("click", function() {
+    $( "div#guide-container div.widget-content:first").toggle();
+  });  
+
+};
+
+$(window).load(function() {
+  
+  Dynamo.initialize();
+  loadGuideAndSlides(loadPage);
+  $("#iframe-container").hide();
+  $("#slide-container").draggable({ handle: "h3.drag-handle" });
+
+});
+
+// Load guides from Mongo;
+// New guide form allows import from Google Doc.
+// Selecting a guide loads it in the editor.
+// Referrent Page loads in the Iframe;
+// - Page title
+
+</script>
+</head>
+<body>
+  <div class="container-fluid" style="padding-top:20px;">
+    <h1>Guide Editor</h1>
+    <div class="row-fluid">
+      <a href="index.html" class="btn btn-info">View All Guides</a>
+      <a href="edit.html?guide=newGuide" class="btn btn-success">New Guide</a>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span6">
+        <div id="guide-container" class="widget">
+        <div class="widget-header widget-header-default">
+          <h3>Current Guide</h3>
+        </div>
+        <div id="current-guide" class="widget-content"></div>
+        </div>
+      </div>
+
+      <div class="span6">
+        <div id="slide-container" class="widget" style="z-index:1000;">
+          <div class="widget-header widget-header-default">
+            <h3 class="h2-move drag-handle" style="display: block;">
+              Current Slide
+              <i class="icon-move pull-right"></i>
+            </h3>
+            <div id="current-slide" class='widget-content'></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="iframe-container" class="connect-modal" style="z-index:999;">
+      <iframe id="guided-page"></iframe>
+    </div>
+    <h2><span class="h2-header" id="elements_title"></span></h2>
+    <div class="clearfix"></div>
+    <div id="available_elements"></div>
+  </div>
+
+</body>
+</html>
