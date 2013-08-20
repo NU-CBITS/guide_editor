@@ -135,8 +135,15 @@ loadGuideAndSlides = function(callback) {
       SLIDES = new SlideCollection();
       
       CurrentGuide = new GuideModel();
-
-      callback();
+      CurrentGuide.save();
+      
+      function ReloadWhenIdExists() {
+        if (CurrentGuide.id) {
+          window.location.href = "edit.html?guide="+CurrentGuide.id;
+        }
+        setTimeout(ReloadWhenIdExists, 100);
+      }
+      ReloadWhenIdExists();
 
     });
 
@@ -147,11 +154,6 @@ loadGuideAndSlides = function(callback) {
 loadPage = function() {
 
   // $("iframe#guided-page").contents().empty();
-
-    // Save New Guides Immediately & Add them to the guides list.
-    if (  CurrentGuide.isNew() ) {
-      CurrentGuide.save(null, {async: false});
-    };
 
     // Initiate Automatic Saving:
     CurrentGuide.saveOnChange();
