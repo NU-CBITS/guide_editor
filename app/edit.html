@@ -52,7 +52,7 @@
 <script type="text/javascript" src="../dynamo/Core.js"></script>
 <script type="text/javascript"> Dynamo.TriremeURL = Config.TriremeURL; </script>
 <script type="text/javascript" src="../dynamo/Core.Models.js"></script>
-<script type="text/javascript"> Dynamo.XelementClass = eval(Config.DynamoXelementClass); </script>
+<script type="text/javascript">Dynamo.XelementClass = eval(Config.DynamoXelementClass);</script>
 <script type="text/javascript" src="../dynamo/Core.Collections.js"></script>
 <script type="text/javascript" src="../dynamo/Core.Views.js"></script>
 
@@ -106,7 +106,8 @@ loadGuideAndSlides = function(callback) {
 
         var slides_json = convertFalses(JSON.parse(slides_request.responseText));
         SLIDES = new SlideCollection(slides_json);   
-      
+        Dynamo.ALL_XELEMENTS = SLIDES;
+
         $.when( guide_request ).done(function() {
 
           guide_json = convertFalses(JSON.parse(guide_request.responseText));
@@ -118,7 +119,9 @@ loadGuideAndSlides = function(callback) {
           callback();
         });
 
-      }); 
+      });
+
+      
 
     });
 
