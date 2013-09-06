@@ -100,6 +100,20 @@ loadPage = function() {
 
   GUIDES.each(function(m) { m.guide_description = m.get_field_value("content_description") });
 
+  GUIDES.comparator = function(guide1, guide2) {
+    var hasDigits = /\d+/,
+        title1 = guide1.get_field_value("title");
+        title2 = guide2.get_field_value("title");
+    if (hasDigits.test(title1) && hasDigits.test(title2)) {
+      var title1 = parseInt(hasDigits.exec(title1));
+          title2 = parseInt(hasDigits.exec(title2));
+    }
+    if (title1 === title2) { return 0 }
+    if (title1 < title2) { return -1 }
+    return 1;    
+  };
+  GUIDES.sort();
+
   guides_list = new Dynamo.ChooseOneXelementFromCollectionView({
     el: "div#guides_index",
     collection: GUIDES,
