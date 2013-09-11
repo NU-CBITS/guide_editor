@@ -83,6 +83,9 @@ fetchGuidesThen = function(callback) {
 
     XELEMENT_BASE = new Backbone.Model(convertFalses(JSON.parse(JSON.parse(xel_base_request.responseText).xel_data_values.content)));
 
+    Dynamo.ALL_SLIDES = new SlideCollection();
+    Dynamo.ALL_SLIDES._ignoreSlideInconsistency = true;
+
     $.when( guides_request ).done(function() {
       var guides_json = convertFalses(JSONparseNested(guides_request.responseText));
       GUIDES = new GuideCollection(guides_json);
