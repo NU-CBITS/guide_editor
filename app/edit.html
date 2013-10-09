@@ -179,11 +179,13 @@ loadPage = function() {
 
     editGuideView.on("slide:chosen", function() {
 
-      // To ensure that content won't get lost on slide change:
-      // causing bug?
+      // To ensure that content won't get lost on slide change,
+      // if an element currently exists, then record the slide content
+      // this might be causing a bug.
       if (  (typeof(editSlideView) !== "undefined") && 
             editSlideView &&
-            (editSlideView.$el.find('textarea.slide-content:first').length > 0)//if an element currently exists
+            (editSlideView.$el.find('textarea.slide-content:first').length > 0)
+
           ) {
         editSlideView.recordSlideContent();
       };
@@ -194,8 +196,8 @@ loadPage = function() {
       };
       
       editSlideView = new Dynamo.EditSlideView({
-        guidedPageSelector: editGuideView.options.iframe_selector,
-        model: editGuideView.current_slide,
+        guidedPageSelector:   editGuideView.options.iframe_selector,
+        model:                editGuideView.current_slide,
         actionTargets: _.map(editGuideView.usableElements, function(el) {
           var r = el.tagName; 
           if (el.idName) { r = r+"#"+el.idName };
@@ -207,7 +209,6 @@ loadPage = function() {
           options = options;
           thisView = thisView;
           
-
           for(name in CKEDITOR.instances) {
             // delete(CKEDITOR.instances[name]);
             try {
@@ -215,12 +216,24 @@ loadPage = function() {
               ed.destroy(true);  
             }
             catch (e1) {
-              console.warn("error trying to properly delete ckeditor instance: '"+name+"'");
+
+              console.warn("Delete CKEditor: Error deleting instance '"+name+"'...");
               try {
                 delete(CKEDITOR.instances[name]);
+                console.log("Delete CKEditor: workaround worked!")
               }
               catch(e2) {
-                console.warn("error trying to workaround for deleting ckeditor instance: '"+name+"'");
+
+                console.warn("Delete CKEditor: Workaround 1 failed for '"+name+"'...");
+                try {
+                  ed = null;
+                  CKEDITOR.instances[name] = null;
+                  CKEDITOR.instances = _.compact(CKEDITOR.instances);
+                }
+                catch(e3) {
+                  console.warn("Delete CKEditor: Workaround 2 failed for '"+name+"';");
+                }
+
               }
             }
           };
@@ -229,11 +242,9 @@ loadPage = function() {
             ckInstance = CKEDITOR.replace(options.selector, options.ckEditorConfig);
           }
           catch (e1) {
-
             console.warn("re-injecting CKEDITOR b/c of ugly CKEditor bug");
-
-            CKEDITOR = null;
             
+            CKEDITOR = null;
             var scriptNode = document.createElement('script');
             scriptNode.type = 'text/javascript';
             scriptNode.async = false;
